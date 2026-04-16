@@ -95,7 +95,7 @@ export default function TrackOrderPage() {
 
                         return (
                             <div key={s} className="flex flex-col items-center gap-2">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isCompleted ? "bg-primary text-primary-foreground shadow-md" : "bg-white border-2 border-muted text-muted-foreground"
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isCompleted ? "bg-primary text-primary-foreground shadow-md" : "bg-white dark:bg-muted border-2 border-muted text-muted-foreground"
                                     }`}>
                                     <Icon className="w-5 h-5" />
                                 </div>
@@ -112,11 +112,11 @@ export default function TrackOrderPage() {
     };
 
     return (
-        <div className="bg-mk-gray min-h-[80vh] py-16">
+        <div className="bg-mk-gray dark:bg-background min-h-[80vh] py-16">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 <div className="text-center mb-12">
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-mk-dark mb-4">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-mk-dark dark:text-foreground mb-4">
                         Track Your Order
                     </h1>
                     <p className="text-muted-foreground">
@@ -125,7 +125,7 @@ export default function TrackOrderPage() {
                 </div>
 
                 {/* Tracking Form */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-border/50 max-w-xl mx-auto mb-12">
+                <div className="bg-white dark:bg-card p-6 md:p-8 rounded-3xl shadow-sm border border-border/50 max-w-xl mx-auto mb-12 transition-colors">
                     <form onSubmit={handleTrack} className="space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="orderNumber">Order Number</Label>
@@ -156,7 +156,7 @@ export default function TrackOrderPage() {
                             </p>
                         )}
 
-                        <Button type="submit" size="lg" className="w-full h-14 rounded-xl text-base" disabled={isSearching}>
+                        <Button type="submit" size="lg" className="w-full h-14 rounded-xl text-base shadow-lg" disabled={isSearching}>
                             {isSearching ? "Searching..." : "Track Order"}
                             {!isSearching && <Search className="w-5 h-5 ml-2" />}
                         </Button>
@@ -165,9 +165,9 @@ export default function TrackOrderPage() {
 
                 {/* Order Results */}
                 {order && (
-                    <div className="bg-white rounded-3xl shadow-lg border border-border/50 overflow-hidden animate-fade-in">
+                    <div className="bg-white dark:bg-card rounded-3xl shadow-lg border border-border/50 overflow-hidden animate-fade-in transition-colors">
                         {/* Header */}
-                        <div className="bg-mk-dark text-white p-6 md:p-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <div className="bg-mk-dark dark:bg-muted text-white p-6 md:p-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                             <div>
                                 <p className="text-white/60 text-sm font-medium mb-1 uppercase tracking-wider">Order Reference</p>
                                 <h2 className="text-2xl font-bold">{order.orderNumber}</h2>
@@ -181,7 +181,7 @@ export default function TrackOrderPage() {
                         <div className="p-6 md:p-8">
                             {/* Progress Tracker */}
                             <div className="mb-12">
-                                <h3 className="text-lg font-bold text-mk-dark mb-8">Delivery Status</h3>
+                                <h3 className="text-lg font-bold text-mk-dark dark:text-foreground mb-8">Delivery Status</h3>
                                 {renderStatusTracker(order.orderStatus)}
                             </div>
 
@@ -189,15 +189,15 @@ export default function TrackOrderPage() {
                                 {/* Details */}
                                 <div className="space-y-6">
                                     <div>
-                                        <h3 className="text-lg font-bold text-mk-dark mb-4 border-b pb-2">Delivery Details</h3>
+                                        <h3 className="text-lg font-bold text-mk-dark dark:text-foreground mb-4 border-b pb-2">Delivery Details</h3>
                                         <div className="space-y-3 text-sm">
-                                            <p><span className="text-muted-foreground mr-2">Recipient:</span> <span className="font-medium">{order.fullName}</span></p>
-                                            <p><span className="text-muted-foreground mr-2">Method:</span> <span className="capitalize font-medium">{order.deliveryMethod}</span></p>
-                                            <p><span className="text-muted-foreground mr-2">Location:</span> <span className="font-medium">{order.deliveryLocation}</span></p>
+                                            <p><span className="text-muted-foreground mr-2">Recipient:</span> <span className="font-medium text-foreground">{order.fullName}</span></p>
+                                            <p><span className="text-muted-foreground mr-2">Method:</span> <span className="capitalize font-medium text-foreground">{order.deliveryMethod}</span></p>
+                                            <p><span className="text-muted-foreground mr-2">Location:</span> <span className="font-medium text-foreground">{order.deliveryLocation}</span></p>
                                         </div>
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold text-mk-dark mb-4 border-b pb-2">Payment Info</h3>
+                                        <h3 className="text-lg font-bold text-mk-dark dark:text-foreground mb-4 border-b pb-2">Payment Info</h3>
                                         <div className="space-y-3 text-sm flex items-center gap-4">
                                             <div className="p-3 bg-muted rounded-xl">
                                                 <CreditCard className="w-6 h-6 text-muted-foreground" />
@@ -216,12 +216,12 @@ export default function TrackOrderPage() {
 
                                 {/* Items */}
                                 <div>
-                                    <h3 className="text-lg font-bold text-mk-dark mb-4 border-b pb-2">Order Items</h3>
+                                    <h3 className="text-lg font-bold text-mk-dark dark:text-foreground mb-4 border-b pb-2">Order Items</h3>
                                     <div className="space-y-4 mb-6">
                                         {order.items.map((item, idx) => (
                                             <div key={idx} className="flex justify-between text-sm items-center">
                                                 <div className="flex-1 pr-4">
-                                                    <p className="font-medium">{item.productName}</p>
+                                                    <p className="font-medium text-foreground">{item.productName}</p>
                                                     {(item.variantName || item.quantity > 1) && (
                                                         <p className="text-xs text-muted-foreground mt-0.5">
                                                             {item.variantName && <span>{item.variantName}</span>}
@@ -230,22 +230,22 @@ export default function TrackOrderPage() {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+                                                <span className="font-medium text-foreground">{formatPrice(item.price * item.quantity)}</span>
                                             </div>
                                         ))}
                                     </div>
 
-                                    <div className="bg-mk-gray p-4 rounded-xl space-y-2 text-sm">
+                                    <div className="bg-mk-gray dark:bg-muted/50 p-4 rounded-xl space-y-2 text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Subtotal</span>
-                                            <span className="font-medium">{formatPrice(order.subtotal)}</span>
+                                            <span className="font-medium text-foreground">{formatPrice(order.subtotal)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Delivery Method</span>
-                                            <span className="font-medium">{formatPrice(order.deliveryFee)}</span>
+                                            <span className="font-medium text-foreground">{formatPrice(order.deliveryFee)}</span>
                                         </div>
-                                        <div className="flex justify-between items-center pt-2 border-t mt-2">
-                                            <span className="font-bold">Total</span>
+                                        <div className="flex justify-between items-center pt-2 border-t mt-2 border-border/50">
+                                            <span className="font-bold text-foreground">Total</span>
                                             <span className="text-lg font-bold text-primary">{formatPrice(order.total)}</span>
                                         </div>
                                     </div>

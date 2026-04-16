@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/hooks/useCart";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,17 +67,22 @@ export default function CheckoutPage() {
         }
     };
 
+    useEffect(() => {
+        if (!cartLoading && items.length === 0) {
+            router.push("/cart");
+        }
+    }, [items.length, cartLoading, router]);
+
     if (cartLoading) return null;
 
     if (items.length === 0) {
-        router.push("/cart");
         return null;
     }
 
     return (
-        <div className="bg-mk-gray min-h-screen py-12">
+        <div className="bg-mk-gray dark:bg-background min-h-screen py-12 transition-colors">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-mk-dark mb-8">
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-mk-dark dark:text-foreground mb-8">
                     Checkout
                 </h1>
 
@@ -93,8 +98,8 @@ export default function CheckoutPage() {
                         )}
 
                         {/* Contact Info */}
-                        <section className="bg-white p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
-                            <h2 className="text-xl font-bold text-mk-dark mb-6 flex items-center gap-2">
+                        <section className="bg-white dark:bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
+                            <h2 className="text-xl font-bold text-mk-dark dark:text-foreground mb-6 flex items-center gap-2">
                                 <User className="w-5 h-5 text-primary" />
                                 Contact Information
                             </h2>
@@ -140,8 +145,8 @@ export default function CheckoutPage() {
                         </section>
 
                         {/* Delivery Info */}
-                        <section className="bg-white p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
-                            <h2 className="text-xl font-bold text-mk-dark mb-6 flex items-center gap-2">
+                        <section className="bg-white dark:bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
+                            <h2 className="text-xl font-bold text-mk-dark dark:text-foreground mb-6 flex items-center gap-2">
                                 <MapPin className="w-5 h-5 text-primary" />
                                 Delivery Details
                             </h2>
@@ -200,7 +205,7 @@ export default function CheckoutPage() {
                             )}
                             {deliveryMethod === "pickup" && (
                                 <div className="p-4 bg-muted/50 rounded-xl">
-                                    <p className="text-sm font-medium text-mk-dark">Pickup Location:</p>
+                                    <p className="text-sm font-medium text-mk-dark dark:text-foreground">Pickup Location:</p>
                                     <p className="text-sm text-muted-foreground mt-1">
                                         MkStore HQ, Nairobi CBD.<br />
                                         We'll contact you when your order is ready for pickup.
@@ -212,8 +217,8 @@ export default function CheckoutPage() {
                         </section>
 
                         {/* Payment Info */}
-                        <section className="bg-white p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
-                            <h2 className="text-xl font-bold text-mk-dark mb-6 flex items-center gap-2">
+                        <section className="bg-white dark:bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
+                            <h2 className="text-xl font-bold text-mk-dark dark:text-foreground mb-6 flex items-center gap-2">
                                 <CreditCard className="w-5 h-5 text-primary" />
                                 Payment Method
                             </h2>
@@ -231,7 +236,7 @@ export default function CheckoutPage() {
                                         {form.watch("paymentMethod") === "mpesa" && <div className="w-2.5 h-2.5 bg-[#4ade80] rounded-full" />}
                                     </div>
                                     <div className="flex-1 text-left">
-                                        <span className="font-semibold block text-mk-dark">M-Pesa Express (STK Push)</span>
+                                        <span className="font-semibold block text-mk-dark dark:text-foreground">M-Pesa Express (STK Push)</span>
                                         <span className="text-xs text-muted-foreground">A prompt will be sent to your phone</span>
                                     </div>
                                     <div className="w-10 h-10 bg-[#4ade80]/20 text-[#4ade80] rounded-lg flex items-center justify-center font-bold">
@@ -251,7 +256,7 @@ export default function CheckoutPage() {
                                         {form.watch("paymentMethod") === "pay_on_delivery" && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
                                     </div>
                                     <div className="flex-1 text-left">
-                                        <span className="font-semibold block text-mk-dark">Pay on Delivery</span>
+                                        <span className="font-semibold block text-mk-dark dark:text-foreground">Pay on Delivery</span>
                                         <span className="text-xs text-muted-foreground">Pay with Cash/M-Pesa upon receiving your order</span>
                                     </div>
                                     <Wallet className="w-6 h-6 text-muted-foreground" />
@@ -263,8 +268,8 @@ export default function CheckoutPage() {
 
                     {/* Order Summary Sidebar */}
                     <div className="lg:col-span-4">
-                        <div className="bg-white p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm sticky top-24">
-                            <h2 className="text-xl font-bold text-mk-dark mb-6 flex items-center gap-2">
+                        <div className="bg-white dark:bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm sticky top-24">
+                            <h2 className="text-xl font-bold text-mk-dark dark:text-foreground mb-6 flex items-center gap-2">
                                 <ReceiptText className="w-5 h-5 text-primary" />
                                 Order Summary
                             </h2>
@@ -273,7 +278,7 @@ export default function CheckoutPage() {
                                 {items.map(item => (
                                     <div key={item.id} className="flex justify-between text-sm">
                                         <div className="flex-1 pr-4">
-                                            <p className="font-medium text-mk-dark truncate">{item.product.name}</p>
+                                            <p className="font-medium text-mk-dark dark:text-foreground truncate">{item.product.name}</p>
                                             <p className="text-muted-foreground text-xs">Qty: {item.quantity}</p>
                                         </div>
                                         <span className="font-semibold whitespace-nowrap">
@@ -297,7 +302,7 @@ export default function CheckoutPage() {
                                     <span className="font-medium">{deliveryFee === 0 ? "Free" : formatPrice(deliveryFee)}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2">
-                                    <span className="text-base font-bold text-mk-dark">Total</span>
+                                    <span className="text-base font-bold text-mk-dark dark:text-foreground">Total</span>
                                     <span className="text-2xl font-bold text-primary">{formatPrice(total)}</span>
                                 </div>
                             </div>

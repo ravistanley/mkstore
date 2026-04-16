@@ -1,5 +1,31 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Prerequisites
+
+- Node.js (v18+)
+- PostgreSQL database
+
+## Setup
+
+1. **Environment Variables**:
+   Copy the `.env` template and fill in your database credentials:
+   ```bash
+   # Create .env if it doesn't exist
+   cp .env.example .env # Or just edit the provided .env
+   ```
+
+2. **Database Migrations**:
+   Run the following command to set up your database schema:
+   ```bash
+   npm run db:push
+   ```
+
+3. **Seed Data**:
+   Populate your database with initial data:
+   ```bash
+   npm run db:seed
+   ```
+
 ## Getting Started
 
 First, run the development server:

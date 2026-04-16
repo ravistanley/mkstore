@@ -54,11 +54,11 @@ export default async function FeaturedProducts() {
     if (featuredProducts.length === 0) return null;
 
     return (
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-background transition-colors">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-mk-dark">Featured Products</h2>
+                        <h2 className="text-3xl font-bold tracking-tight text-mk-dark dark:text-foreground transition-colors">Featured Products</h2>
                         <p className="text-muted-foreground mt-2">Our most popular premium accessories.</p>
                     </div>
                     <Link

@@ -94,15 +94,15 @@ export default async function CategoryPage({
     }
 
     return (
-        <div className="bg-mk-gray min-h-screen pb-20">
+        <div className="bg-mk-gray dark:bg-background min-h-screen pb-20 transition-colors">
             {/* Header */}
-            <div className="bg-white border-b border-border/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                    <h1 className="text-4xl font-bold tracking-tight text-mk-dark mb-4">
+            <div className="bg-white dark:bg-card border-b border-border/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 animate-fade-in">
+                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-mk-dark dark:text-foreground mb-4">
                         {category.name}
                     </h1>
                     {category.description && (
-                        <p className="text-muted-foreground max-w-2xl text-lg">
+                        <p className="text-muted-foreground max-w-2xl text-lg md:text-xl leading-relaxed">
                             {category.description}
                         </p>
                     )}
@@ -112,14 +112,17 @@ export default async function CategoryPage({
             {/* Product Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {catProducts.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-3xl border border-border/50">
-                        <h2 className="text-2xl font-semibold mb-2">No products yet</h2>
-                        <p className="text-muted-foreground">
+                    <div className="text-center py-24 bg-white dark:bg-card rounded-3xl border border-border/50 shadow-sm animate-fade-in">
+                        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                           <span className="text-3xl text-muted-foreground/30">📦</span>
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">No products yet</h2>
+                        <p className="text-muted-foreground max-w-md mx-auto">
                             We're currently adding products to {category.name}. Check back later!
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
                         {catProducts.map((product) => (
                             <ProductCard
                                 key={product.id}
