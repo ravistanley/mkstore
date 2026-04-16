@@ -22,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground`}>
+      <body 
+        className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground`}
+        suppressHydrationWarning
+      >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <CartProvider>
             <Header />
