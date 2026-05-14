@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Edit, Trash2, Search, Loader2, Image as ImageIcon } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 
 type Product = {
     id: string;
@@ -17,9 +20,14 @@ type Product = {
 };
 
 export default function AdminProductsPage() {
+    const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
+
+    const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchProducts();
@@ -27,12 +35,14 @@ export default function AdminProductsPage() {
 
     const fetchProducts = async () => {
         try {
-            // Re-using the public products API for the list view since it returns what we need
-            // In a real app, an admin-specific endpoint might be better to return inactive products too
             const res = await fetch("/api/admin/products");
+            if (res.status === 401) {
+                router.replace("/mk-admin-portal/login");
+                return;
+            }
             if (res.ok) {
                 const data = await res.json();
-                setProducts(data);
+                setProducts(data.products || []);
             }
         } catch (error) {
             console.error("Failed to fetch products", error);
@@ -41,16 +51,23 @@ export default function AdminProductsPage() {
         }
     };
 
-    const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete "${name}"? This will delete all variants and images too.`)) return;
-
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
+        setIsDeleting(true);
+        setDeleteError(null);
         try {
-            const res = await fetch(`/api/admin/products?id=${id}`, { method: "DELETE" });
-            if (!res.ok) throw new Error("Failed to delete product");
+            const res = await fetch(`/api/admin/products?id=${productToDelete.id}`, { method: "DELETE" });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to delete product");
+            }
+            toast.success("Product deleted successfully");
             await fetchProducts();
+            setProductToDelete(null);
         } catch (error) {
-            console.error(error);
-            alert("Failed to delete product");
+            setDeleteError(error instanceof Error ? error.message : "Failed to delete product");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -62,9 +79,11 @@ export default function AdminProductsPage() {
                 body: JSON.stringify({ featured: !product.featured }),
             });
             if (!res.ok) throw new Error("Failed to update status");
+            toast.success(product.featured ? "Product removed from featured" : "Product marked as featured");
             await fetchProducts();
         } catch (error) {
             console.error(error);
+            toast.error("Failed to update product status");
         }
     };
 
@@ -75,7 +94,7 @@ export default function AdminProductsPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-mk-dark">Products</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Products</h1>
                     <p className="text-muted-foreground mt-1">Manage your store's inventory and catalog.</p>
                 </div>
                 <Link href="/mk-admin-portal/products/new" className={buttonVariants({ className: "h-11 rounded-xl gap-2" })}>
@@ -84,7 +103,7 @@ export default function AdminProductsPage() {
                 </Link>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-border/50">
+            <div className="bg-card p-4 rounded-2xl shadow-sm border border-border">
                 <div className="relative w-full max-w-md">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -96,7 +115,7 @@ export default function AdminProductsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
                 {isLoading ? (
                     <div className="p-8 flex justify-center text-muted-foreground">
                         <Loader2 className="w-8 h-8 animate-spin" />
@@ -108,7 +127,7 @@ export default function AdminProductsPage() {
                 ) : (
                     <div className="divide-y divide-border/50">
                         <div className="grid grid-cols-12 gap-4 p-4 text-sm font-semibold text-muted-foreground bg-muted/30">
-                            <div className="col-span-1 border-r border-border/50">Image</div>
+                            <div className="col-span-1 border-r border-border">Image</div>
                             <div className="col-span-4">Product Name</div>
                             <div className="col-span-2">Category</div>
                             <div className="col-span-2">Base Price</div>
@@ -120,9 +139,10 @@ export default function AdminProductsPage() {
                             <div key={product.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/10 transition-colors">
 
                                 <div className="col-span-1 flex justify-center">
-                                    <div className="w-10 h-10 bg-muted rounded-lg border border-border/50 flex items-center justify-center overflow-hidden relative">
+                                    <div className="w-10 h-10 bg-muted rounded-lg border border-border flex items-center justify-center overflow-hidden relative">
                                         {product.imageUrl ? (
-                                            <span className="text-[10px] absolute text-muted-foreground w-full text-center">IMG</span>
+                                            /* eslint-disable-next-line @next/next/no-img-element */
+                                            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <ImageIcon className="w-4 h-4 text-muted-foreground/50" />
                                         )}
@@ -151,7 +171,7 @@ export default function AdminProductsPage() {
                                     <Link href={`/mk-admin-portal/products/${product.id}`} className={buttonVariants({ variant: "ghost", size: "icon" })}>
                                         <Edit className="w-4 h-4" />
                                     </Link>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(product.id, product.name)}>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setProductToDelete(product)}>
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>
@@ -160,6 +180,43 @@ export default function AdminProductsPage() {
                     </div>
                 )}
             </div>
+
+            <Dialog open={!!productToDelete} onOpenChange={(open) => {
+                if (!open) {
+                    setProductToDelete(null);
+                    setDeleteError(null);
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Product</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <span className="font-semibold text-foreground">"{productToDelete?.name}"</span>? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {deleteError && (
+                        <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-lg border border-destructive/20 font-medium">
+                            {deleteError}
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline" disabled={isDeleting}>Cancel</Button>
+                        </DialogClose>
+                        <Button 
+                            variant="destructive" 
+                            disabled={isDeleting}
+                            onClick={confirmDelete}
+                        >
+                            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
+

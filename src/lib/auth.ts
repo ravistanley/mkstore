@@ -5,13 +5,31 @@ import { adminUsers } from "./db/schema";
 import { eq } from "drizzle-orm";
 
 const SESSION_COOKIE_NAME = "mk_admin_session";
-const SESSION_MAX_AGE = 10 * 60; // 10 minutes in seconds
+const SESSION_MAX_AGE = 2 * 60; // 2 minutes in seconds (Security requirement)
+
+// ============================================================
+// In-memory session store — wipped on server restart for security.
+// ============================================================
+
+const globalForAuth = globalThis as unknown as {
+    loginAttempts: Map<string, { count: number; lastAttempt: number; lockedUntil: number }> | undefined;
+    sessions: Map<string, { email: string; expiresAt: number }> | undefined;
+};
 
 // Rate limiting
-const loginAttempts = new Map<
+const loginAttempts = globalForAuth.loginAttempts ?? new Map<
     string,
     { count: number; lastAttempt: number; lockedUntil: number }
 >();
+
+// Sessions
+const sessions = globalForAuth.sessions ?? new Map<string, { email: string; expiresAt: number }>();
+
+if (process.env.NODE_ENV !== "production") {
+    globalForAuth.loginAttempts = loginAttempts;
+    globalForAuth.sessions = sessions;
+}
+
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 
@@ -80,7 +98,7 @@ export function recordLoginAttempt(email: string, success: boolean) {
     loginAttempts.set(email, attempts);
 }
 
-// Simple token-based session (no JWT dependency needed)
+// Simple token-based session
 function generateSessionToken(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
@@ -88,9 +106,6 @@ function generateSessionToken(): string {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 }
-
-// In-memory session store (in production, use Redis or DB)
-const sessions = new Map<string, { email: string; expiresAt: number }>();
 
 export async function createAdminSession(email: string): Promise<string> {
     const token = generateSessionToken();
@@ -120,14 +135,20 @@ export async function getAdminSession(): Promise<{
     if (!token) return null;
 
     const session = sessions.get(token);
-    if (!session) return null;
-
-    if (session.expiresAt < Date.now()) {
-        sessions.delete(token);
+    if (!session) {
+        // Token exists in browser but not in memory (e.g. server restart)
+        // Delete the cookie to be clean
+        cookieStore.delete(SESSION_COOKIE_NAME);
         return null;
     }
 
-    // Extend session on activity
+    if (session.expiresAt < Date.now()) {
+        sessions.delete(token);
+        cookieStore.delete(SESSION_COOKIE_NAME);
+        return null;
+    }
+
+    // Extend session on activity (sliding window)
     session.expiresAt = Date.now() + SESSION_MAX_AGE * 1000;
     sessions.set(token, session);
 
@@ -170,7 +191,6 @@ export async function validateAdminCredentials(
         if (!user) return false;
         return verifyPassword(password, user.passwordHash);
     } catch {
-        // DB might not be connected yet
         return false;
     }
 }

@@ -96,14 +96,14 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         <div className="max-w-5xl mx-auto space-y-6">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/50 pb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
                     <div>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold tracking-tight text-mk-dark">
+                            <h1 className="text-2xl font-bold tracking-tight text-foreground">
                                 Order {order.orderNumber}
                             </h1>
                             <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${order.paymentStatus === 'completed' ? 'bg-[#4ade80]/10 text-[#4ade80]' :
@@ -126,9 +126,9 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                 <div className="lg:col-span-2 space-y-8">
 
                     {/* Items */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-border/50 overflow-hidden">
-                        <div className="p-6 border-b border-border/50 flex justify-between items-center bg-muted/10">
-                            <h2 className="text-lg font-bold text-mk-dark flex items-center gap-2">
+                    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+                        <div className="p-6 border-b border-border flex justify-between items-center bg-muted/10">
+                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 <Package className="w-5 h-5 text-primary" /> Items
                             </h2>
                             <span className="text-sm font-medium text-muted-foreground">{order.items.length} items</span>
@@ -139,7 +139,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                     <div className="flex gap-4">
                                         <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center text-[10px] text-muted-foreground">IMG</div>
                                         <div>
-                                            <p className="font-medium text-sm text-mk-dark">{item.productName}</p>
+                                            <p className="font-medium text-sm text-foreground">{item.productName}</p>
                                             <p className="text-xs text-muted-foreground mt-0.5">
                                                 {item.variantName && <span className="mr-2">{item.variantName}</span>}
                                                 <span>Qty: {item.quantity}</span>
@@ -151,7 +151,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             ))}
                         </div>
 
-                        <div className="p-6 bg-muted/10 border-t border-border/50 space-y-2">
+                        <div className="p-6 bg-muted/10 border-t border-border space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Subtotal</span>
                                 <span className="font-medium">{formatPrice(order.subtotal)}</span>
@@ -160,7 +160,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                 <span className="text-muted-foreground">Delivery Method ({order.deliveryMethod})</span>
                                 <span className="font-medium">{formatPrice(order.total - order.subtotal)}</span>
                             </div>
-                            <div className="flex justify-between text-base pt-2 border-t border-border/50 mt-2 font-bold text-mk-dark">
+                            <div className="flex justify-between text-base pt-2 border-t border-border mt-2 font-bold text-foreground">
                                 <span>Total</span>
                                 <span className="text-primary">{formatPrice(order.total)}</span>
                             </div>
@@ -168,14 +168,14 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     {/* Fulfillment Status Updates */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-border/50 overflow-hidden">
-                        <div className="p-6 border-b border-border/50 bg-muted/10">
-                            <h2 className="text-lg font-bold text-mk-dark flex items-center gap-2">
+                    <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
+                        <div className="p-6 border-b border-border bg-muted/10">
+                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 <Truck className="w-5 h-5 text-primary" /> Fulfillment Status
                             </h2>
                         </div>
                         <div className="p-6 flex flex-col sm:flex-row gap-4 justify-between items-center relative">
-                            {isUpdating && <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}
+                            {isUpdating && <div className="absolute inset-0 bg-card/50 z-10 flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}
 
                             <div className="flex-1 w-full">
                                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Order Status</label>
@@ -222,8 +222,8 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                 <div className="space-y-6">
 
                     {/* Customer Info */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-4">
-                        <h2 className="font-bold text-mk-dark flex items-center gap-2 mb-4">
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-4">
+                        <h2 className="font-bold text-foreground flex items-center gap-2 mb-4">
                             <User className="w-4 h-4 text-primary" /> Customer
                         </h2>
                         <div className="text-sm space-y-3">
@@ -234,8 +234,8 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     {/* Delivery Info */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-4">
-                        <h2 className="font-bold text-mk-dark flex items-center gap-2 mb-4">
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-4">
+                        <h2 className="font-bold text-foreground flex items-center gap-2 mb-4">
                             <MapPin className="w-4 h-4 text-primary" /> Delivery Info
                         </h2>
                         <div className="text-sm space-y-3">
@@ -254,8 +254,8 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     {/* Payment Details */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-4">
-                        <h2 className="font-bold text-mk-dark flex items-center gap-2 mb-4">
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-4">
+                        <h2 className="font-bold text-foreground flex items-center gap-2 mb-4">
                             <CreditCard className="w-4 h-4 text-primary" /> Payment
                         </h2>
                         <div className="text-sm space-y-3">

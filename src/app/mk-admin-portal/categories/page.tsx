@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Search, ArrowRight, Loader2, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, Search, ArrowRight, Loader2, GripVertical, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -25,7 +25,9 @@ export default function AdminCategoriesPage() {
     // Form state
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
+    const [imageUrl, setImageUrl] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     useEffect(() => {
         fetchCategories();
@@ -36,7 +38,7 @@ export default function AdminCategoriesPage() {
             const res = await fetch("/api/admin/categories");
             if (res.ok) {
                 const data = await res.json();
-                setCategories(data);
+                setCategories(data.categories || []);
             }
         } catch (error) {
             console.error("Failed to fetch categories", error);
@@ -45,17 +47,58 @@ export default function AdminCategoriesPage() {
         }
     };
 
+    const generateSlug = (text: string) => {
+        return text
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)+/g, "");
+    };
+
+    const handleNameChange = (newName: string) => {
+        setName(newName);
+        // Only auto-generate slug if it's a new category
+        if (!editingCategory) {
+            // If we had a slug state, we'd set it here. 
+            // The API likely handles slug generation if not provided, 
+            // but for UI consistency we should probably show it or just let the API handle it.
+            // Let's check if the API handles it.
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        setUploadingImage(true);
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+            if (!res.ok) throw new Error("Upload failed");
+            const data = await res.json();
+            setImageUrl(data.url);
+        } catch (error) {
+            console.error(error);
+            alert("Upload failed");
+        } finally {
+            setUploadingImage(false);
+            if (e.target) e.target.value = '';
+        }
+    };
+
     const openAddModal = () => {
         setEditingCategory(null);
         setName("");
         setDescription("");
+        setImageUrl("");
         setIsModalOpen(true);
     };
 
-    const openEditModal = (cat: Category) => {
-        setEditingCategory(cat);
+    const openEditModal = (cat: Category & { imageUrl?: string | null }) => {
+        setEditingCategory(cat as Category);
         setName(cat.name);
         setDescription(cat.description || "");
+        setImageUrl(cat.imageUrl || "");
         setIsModalOpen(true);
     };
 
@@ -64,13 +107,24 @@ export default function AdminCategoriesPage() {
         setIsSubmitting(true);
 
         try {
-            const url = editingCategory ? `/api/admin/categories?id=${editingCategory.id}` : "/api/admin/categories";
-            const method = editingCategory ? "PATCH" : "POST";
+            const url = "/api/admin/categories";
+            const method = editingCategory ? "PUT" : "POST";
+
+            const payload: any = {
+                name,
+                slug: generateSlug(name),
+                description,
+                imageUrl
+            };
+
+            if (editingCategory) {
+                payload.id = editingCategory.id;
+            }
 
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, description }),
+                body: JSON.stringify(payload),
             });
 
             if (!res.ok) throw new Error("Failed to save category");
@@ -104,7 +158,7 @@ export default function AdminCategoriesPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-mk-dark">Categories</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Categories</h1>
                     <p className="text-muted-foreground mt-1">Manage your product categories.</p>
                 </div>
                 <Button onClick={openAddModal} className="h-11 rounded-xl gap-2">
@@ -113,7 +167,7 @@ export default function AdminCategoriesPage() {
                 </Button>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-border/50 flex flex-col sm:flex-row justify-between gap-4">
+            <div className="bg-card p-4 rounded-2xl shadow-sm border border-border flex flex-col sm:flex-row justify-between gap-4">
                 <div className="relative w-full max-w-md">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -125,7 +179,7 @@ export default function AdminCategoriesPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
                 {isLoading ? (
                     <div className="p-8 flex justify-center text-muted-foreground">
                         <Loader2 className="w-8 h-8 animate-spin" />
@@ -137,7 +191,7 @@ export default function AdminCategoriesPage() {
                 ) : (
                     <div className="divide-y divide-border/50">
                         <div className="grid grid-cols-12 gap-4 p-4 text-sm font-semibold text-muted-foreground bg-muted/30">
-                            <div className="col-span-1 border-r border-border/50">#</div>
+                            <div className="col-span-1 border-r border-border">#</div>
                             <div className="col-span-4">Name</div>
                             <div className="col-span-5">Description</div>
                             <div className="col-span-2 text-right">Actions</div>
@@ -164,31 +218,58 @@ export default function AdminCategoriesPage() {
             {/* Modal Overlay */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-mk-dark/80 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
+                    <div className="bg-card rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
                         <div className="p-6 border-b border-border">
-                            <h2 className="text-xl font-bold text-mk-dark">
+                            <h2 className="text-xl font-bold text-foreground">
                                 {editingCategory ? "Edit Category" : "Add Category"}
                             </h2>
                         </div>
                         <form onSubmit={handleSave} className="p-6 space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-mk-dark">Category Name *</label>
+                                <label className="text-sm font-semibold text-foreground">Category Name *</label>
                                 <Input
                                     required
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="e.g. Laptop Sleeves"
-                                    className="bg-muted/50 border-0 focus-visible:ring-1 focus-visible:bg-white"
+                                    className="bg-muted/50 border-0 focus-visible:ring-1 focus-visible:bg-card"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-mk-dark">Description</label>
+                                <label className="text-sm font-semibold text-foreground">Description</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="w-full p-3 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary focus:bg-white resize-none h-24 text-sm"
+                                    className="w-full p-3 rounded-xl bg-muted/50 border-0 focus:ring-1 focus:ring-primary focus:bg-card resize-none h-24 text-sm"
                                     placeholder="Optional categorization description."
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-foreground">Category Image</label>
+                                <div className="flex items-center gap-4">
+                                    {imageUrl && (
+                                        <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden border border-border relative group">
+                                            <img src={imageUrl} alt="Category" className="w-full h-full object-cover" />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setImageUrl("")}
+                                                className="absolute inset-0 bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <label className={`flex-1 h-16 rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted transition-colors ${uploadingImage ? 'opacity-50' : ''}`}>
+                                        {uploadingImage ? (
+                                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                        ) : (
+                                            <span className="text-xs font-medium text-muted-foreground">
+                                                {imageUrl ? "Change Image" : "Upload Image"}
+                                            </span>
+                                        )}
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
+                                    </label>
+                                </div>
                             </div>
                             <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
                                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
@@ -205,3 +286,4 @@ export default function AdminCategoriesPage() {
         </div>
     );
 }
+

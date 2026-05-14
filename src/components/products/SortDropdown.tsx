@@ -66,8 +66,8 @@ export default function SortDropdown({ currentSort }: { currentSort: string }) {
                             onClick={() => handleSort(option.value)}
                             className={`flex items-center justify-between w-full px-4 py-3 text-sm transition-colors text-left ${
                                 currentSort === option.value 
-                                    ? 'bg-primary/5 text-primary font-bold' 
-                                    : 'hover:bg-muted text-foreground/70 hover:text-foreground'
+                                    ? 'bg-primary/8 text-primary font-bold' 
+                                    : 'hover:bg-muted text-foreground/90 hover:text-foreground'
                             }`}
                         >
                             <span className="truncate">{option.label}</span>

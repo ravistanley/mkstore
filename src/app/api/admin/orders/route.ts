@@ -16,6 +16,16 @@ export async function GET(request: NextRequest) {
         const status = searchParams.get("status");
         const limit = Number(searchParams.get("limit")) || 50;
         const dashboard = searchParams.get("dashboard");
+        const id = searchParams.get("id");
+
+        if (id) {
+            const [order] = await db.select().from(orders).where(eq(orders.id, id));
+            if (!order) {
+                return NextResponse.json({ error: "Order not found" }, { status: 404 });
+            }
+            const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
+            return NextResponse.json({ ...order, items });
+        }
 
         // Dashboard stats
         if (dashboard === "true") {
@@ -65,7 +75,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
     const session = await getAdminSession();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -90,9 +100,11 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const updateData: Record<string, string> = {
-            orderStatus: parsed.data.orderStatus,
-        };
+        const updateData: Record<string, string> = {};
+
+        if (parsed.data.orderStatus) {
+            updateData.orderStatus = parsed.data.orderStatus;
+        }
 
         if (parsed.data.paymentStatus) {
             updateData.paymentStatus = parsed.data.paymentStatus;

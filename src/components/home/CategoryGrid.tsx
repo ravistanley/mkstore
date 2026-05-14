@@ -1,8 +1,9 @@
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
-import { Laptop, Smartphone, Monitor, Cable, Speaker, Battery, Keyboard, Zap, Headphones } from "lucide-react";
 import { eq } from "drizzle-orm";
+import { ArrowRight } from "lucide-react";
 
 async function getCategoriesWithCounts() {
     try {
@@ -19,59 +20,111 @@ async function getCategoriesWithCounts() {
     }
 }
 
-const getCategoryStyle = (slug: string) => {
-    if (slug.includes("laptop") || slug.includes("macbook")) return { icon: Laptop, color: "text-blue-500", bg: "bg-blue-500/10", hoverBg: "group-hover:bg-blue-500" };
-    if (slug.includes("phone-case")) return { icon: Smartphone, color: "text-emerald-500", bg: "bg-emerald-500/10", hoverBg: "group-hover:bg-emerald-500" };
-    if (slug.includes("screen")) return { icon: Monitor, color: "text-amber-500", bg: "bg-amber-500/10", hoverBg: "group-hover:bg-amber-500" };
-    if (slug.includes("cable") || slug.includes("charger")) return { icon: Cable, color: "text-rose-500", bg: "bg-rose-500/10", hoverBg: "group-hover:bg-rose-500" };
-    if (slug.includes("charm")) return { icon: Zap, color: "text-purple-500", bg: "bg-purple-500/10", hoverBg: "group-hover:bg-purple-500" };
-    if (slug.includes("audio") || slug.includes("pod")) return { icon: Headphones, color: "text-cyan-500", bg: "bg-cyan-500/10", hoverBg: "group-hover:bg-cyan-500" };
-    if (slug.includes("desk") || slug.includes("stand")) return { icon: Keyboard, color: "text-indigo-500", bg: "bg-indigo-500/10", hoverBg: "group-hover:bg-indigo-500" };
-    
-    return { icon: Monitor, color: "text-primary", bg: "bg-primary/10", hoverBg: "group-hover:bg-primary" };
-};
-
 export default async function CategoryGrid() {
     const allCategories = await getCategoriesWithCounts();
 
     if (allCategories.length === 0) return null;
 
+    const [featured1, featured2, ...rest] = allCategories;
+
     return (
-        <section className="py-24 bg-mk-gray/50 dark:bg-background border-y border-border/50">
+        <section className="py-20 bg-white dark:bg-background border-y border-border">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-mk-dark dark:text-foreground">Shop by Category</h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl">
-                            Find exactly what you need for your specific device.
-                        </p>
-                    </div>
+                {/* Section header */}
+                <div className="mb-10">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Collections</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Shop by category</h2>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-                    {allCategories.map((category, index) => {
-                        const style = getCategoryStyle(category.slug);
-                        const Icon = style.icon;
-                        
-                        return (
-                            <Link
-                                key={category.id}
-                                href={`/category/${category.slug}`}
-                                className="group card-hover bg-white dark:bg-card rounded-3xl p-6 flex flex-col items-center justify-center text-center border border-border/50 shadow-sm relative overflow-hidden animate-slide-in-right"
-                                style={{ animationDelay: `${index * 0.1}s` }}
-                            >
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 ${style.bg} ${style.hoverBg}`}>
-                                    <Icon className={`w-8 h-8 transition-colors duration-300 group-hover:text-white ${style.color}`} />
+                {/* Grid layout: 2 featured + 4 smaller */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    {/* Featured card 1 — spans 2 rows on lg */}
+                    {featured1 && (
+                        <Link
+                            href={`/category/${featured1.slug}`}
+                            className="group relative col-span-1 lg:col-span-1 lg:row-span-2 flex flex-col justify-end bg-mk-gray dark:bg-muted rounded-2xl overflow-hidden min-h-[200px] lg:min-h-[320px] border border-border hover:border-primary/30 transition-colors"
+                        >
+                            {featured1.imageUrl ? (
+                                <>
+                                    <Image src={featured1.imageUrl} alt={featured1.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                                </>
+                            ) : (
+                                <div className="absolute inset-x-0 top-0 h-1 bg-primary rounded-t-2xl" />
+                            )}
+                            <div className="relative p-5 pt-8 z-10">
+                                <h3 className={`font-bold text-base group-hover:text-primary transition-colors leading-tight ${featured1.imageUrl ? 'text-white' : 'text-foreground'}`}>
+                                    {featured1.name}
+                                </h3>
+                                <p className={`text-sm mt-1 ${featured1.imageUrl ? 'text-white/70' : 'text-muted-foreground'}`}>{featured1.count} items</p>
+                                <div className="mt-3 flex items-center gap-1 text-primary text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Browse <ArrowRight className="w-3 h-3" />
                                 </div>
-                                <h3 className="font-bold text-sm text-mk-dark dark:text-foreground group-hover:text-primary transition-colors tracking-tight">
+                            </div>
+                        </Link>
+                    )}
+
+                    {/* Featured card 2 — spans 2 rows on lg */}
+                    {featured2 && (
+                        <Link
+                            href={`/category/${featured2.slug}`}
+                            className="group relative col-span-1 lg:col-span-1 lg:row-span-2 flex flex-col justify-end bg-mk-gray dark:bg-muted rounded-2xl overflow-hidden min-h-[200px] lg:min-h-[320px] border border-border hover:border-primary/30 transition-colors"
+                        >
+                            {featured2.imageUrl ? (
+                                <>
+                                    <Image src={featured2.imageUrl} alt={featured2.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                                </>
+                            ) : (
+                                <div className="absolute inset-x-0 top-0 h-1 bg-primary rounded-t-2xl" />
+                            )}
+                            <div className="relative p-5 pt-8 z-10">
+                                <h3 className={`font-bold text-base group-hover:text-primary transition-colors leading-tight ${featured2.imageUrl ? 'text-white' : 'text-foreground'}`}>
+                                    {featured2.name}
+                                </h3>
+                                <p className={`text-sm mt-1 ${featured2.imageUrl ? 'text-white/70' : 'text-muted-foreground'}`}>{featured2.count} items</p>
+                                <div className="mt-3 flex items-center gap-1 text-primary text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Browse <ArrowRight className="w-3 h-3" />
+                                </div>
+                            </div>
+                        </Link>
+                    )}
+
+                    {/* Smaller category cards */}
+                    {rest.map((category) => (
+                        <Link
+                            key={category.id}
+                            href={`/category/${category.slug}`}
+                            className="group relative flex flex-col justify-end bg-mk-gray dark:bg-muted rounded-2xl overflow-hidden min-h-[140px] border border-border hover:border-primary/30 transition-colors"
+                        >
+                            {category.imageUrl ? (
+                                <>
+                                    <Image src={category.imageUrl} alt={category.name} fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                </>
+                            ) : (
+                                <div className="absolute inset-x-0 top-0 h-0.5 bg-border group-hover:bg-primary rounded-t-2xl transition-colors" />
+                            )}
+                            <div className="relative p-4 pt-6 z-10">
+                                <h3 className={`font-semibold text-sm group-hover:text-primary transition-colors leading-tight ${category.imageUrl ? 'text-white' : 'text-foreground'}`}>
                                     {category.name}
                                 </h3>
-                                <p className="text-xs text-muted-foreground mt-1.5 font-medium">
-                                    {category.count} {category.count === 1 ? 'Product' : 'Products'}
-                                </p>
-                            </Link>
-                        );
-                    })}
+                                <p className={`text-xs mt-0.5 ${category.imageUrl ? 'text-white/70' : 'text-muted-foreground'}`}>{category.count} items</p>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+
+                {/* View all link */}
+                <div className="mt-8 text-center">
+                    <Link
+                        href="/shop"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors group"
+                    >
+                        View all products
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
                 </div>
             </div>
         </section>

@@ -19,13 +19,48 @@ async function seed() {
 
     // Seed categories
     const categoryData = [
-        { name: "Laptop Sleeves", slug: "laptop-sleeves", description: "Premium sleeves to protect your laptop in style" },
-        { name: "MacBook Covers", slug: "macbook-covers", description: "Precision-fit cases for every MacBook model" },
-        { name: "Phone Cases", slug: "phone-cases", description: "Protective and stylish cases for your smartphone" },
-        { name: "Phone Charms", slug: "phone-charms", description: "Unique charms to personalize your phone" },
-        { name: "Screen Protectors", slug: "screen-protectors", description: "Crystal-clear protection for your devices" },
-        { name: "Desk Accessories", slug: "desk-accessories", description: "Elevate your workspace with premium accessories" },
-        { name: "Cable Organizers", slug: "cable-organizers", description: "Keep your cables neat and tidy" },
+        {
+            name: "Laptop Sleeves",
+            slug: "laptop-sleeves",
+            description: "Premium sleeves to protect your laptop in style",
+            imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=800&auto=format&fit=crop"
+        },
+        {
+            name: "MacBook Covers",
+            slug: "macbook-covers",
+            description: "Precision-fit cases for every MacBook model",
+            imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=800&auto=format&fit=crop"
+        },
+        {
+            name: "Phone Cases",
+            slug: "phone-cases",
+            description: "Protective and stylish cases for your smartphone",
+            imageUrl: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=800&auto=format&fit=crop"
+        },
+        {
+            name: "Desk Accessories",
+            slug: "desk-accessories",
+            description: "Elevate your workspace with premium accessories",
+            imageUrl: "https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?q=80&w=800&auto=format&fit=crop"
+        },
+        {
+            name: "Phone Charms",
+            slug: "phone-charms",
+            description: "Unique charms to personalize your phone",
+            imageUrl: "https://images.unsplash.com/photo-1616410011236-7a42121dd981?q=80&w=800&auto=format&fit=crop"
+        },
+        {
+            name: "Screen Protectors",
+            slug: "screen-protectors",
+            description: "Crystal-clear protection for your devices",
+            imageUrl: "https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=800&auto=format&fit=crop"
+        },
+        {
+            name: "Cable Organizers",
+            slug: "cable-organizers",
+            description: "Keep your cables neat and tidy",
+            imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop"
+        },
     ];
 
     const insertedCategories = await db
@@ -48,6 +83,7 @@ async function seed() {
             compareAtPrice: "4500.00",
             categoryId: catMap.get("laptop-sleeves"),
             featured: true,
+            imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "MacBook Clear Hard Case",
@@ -56,6 +92,7 @@ async function seed() {
             price: "2800.00",
             categoryId: catMap.get("macbook-covers"),
             featured: true,
+            imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "iPhone Silicone Case",
@@ -65,6 +102,7 @@ async function seed() {
             compareAtPrice: "2000.00",
             categoryId: catMap.get("phone-cases"),
             featured: true,
+            imageUrl: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "Crystal Bead Phone Charm",
@@ -73,6 +111,7 @@ async function seed() {
             price: "800.00",
             categoryId: catMap.get("phone-charms"),
             featured: false,
+            imageUrl: "https://images.unsplash.com/photo-1616410011236-7a42121dd981?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "Tempered Glass Screen Protector",
@@ -81,6 +120,7 @@ async function seed() {
             price: "500.00",
             categoryId: catMap.get("screen-protectors"),
             featured: true,
+            imageUrl: "https://images.unsplash.com/photo-1580910051074-3eb694886505?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "Bamboo Laptop Stand",
@@ -89,6 +129,7 @@ async function seed() {
             price: "4200.00",
             categoryId: catMap.get("desk-accessories"),
             featured: true,
+            imageUrl: "https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "Leather Cable Organizer",
@@ -97,6 +138,7 @@ async function seed() {
             price: "1200.00",
             categoryId: catMap.get("cable-organizers"),
             featured: false,
+            imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop"
         },
         {
             name: "Minimalist Desk Mat",
@@ -106,19 +148,25 @@ async function seed() {
             compareAtPrice: "3800.00",
             categoryId: catMap.get("desk-accessories"),
             featured: true,
+            imageUrl: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?q=80&w=800&auto=format&fit=crop"
         },
     ];
 
     const insertedProducts = await db
         .insert(products)
-        .values(productData)
+        .values(productData.map(({ imageUrl, ...rest }) => rest))
         .onConflictDoNothing()
         .returning();
 
-    console.log(`✅ ${insertedProducts.length} products created`);
+    let finalProducts = [...insertedProducts];
+    if (finalProducts.length === 0) {
+        finalProducts = await db.select().from(products);
+    }
+
+    console.log(`✅ Using ${finalProducts.length} products for variants/images`);
 
     // Seed variants
-    const prodMap = new Map(insertedProducts.map((p) => [p.slug, p.id]));
+    const prodMap = new Map(finalProducts.map((p) => [p.slug, p.id]));
 
     const variantData = [
         { productId: prodMap.get("macbook-clear-hard-case")!, name: "MacBook Air M1", sku: "MCC-AIR-M1", stockQuantity: 25 },
@@ -133,18 +181,23 @@ async function seed() {
         { productId: prodMap.get("premium-leather-laptop-sleeve")!, name: "13 inch", sku: "PLS-13", stockQuantity: 20 },
         { productId: prodMap.get("premium-leather-laptop-sleeve")!, name: "14 inch", sku: "PLS-14", stockQuantity: 25 },
         { productId: prodMap.get("premium-leather-laptop-sleeve")!, name: "15 inch", sku: "PLS-15", stockQuantity: 15 },
-    ];
+    ].filter(v => v.productId); // Ensure we only insert variants with a valid productId
 
-    await db.insert(productVariants).values(variantData).onConflictDoNothing();
-    console.log(`✅ ${variantData.length} variants created`);
+    if (variantData.length > 0) {
+        await db.insert(productVariants).values(variantData).onConflictDoNothing();
+        console.log(`✅ ${variantData.length} variants created`);
+    }
 
-    // Seed placeholder product images
-    const imageData = insertedProducts.map((p) => ({
-        productId: p.id,
-        url: `/api/placeholder/600/600?text=${encodeURIComponent(p.name)}`,
-        altText: p.name,
-        position: 0,
-    }));
+    // Seed product images using the map to match real URLs
+    const imageData = finalProducts.map((p) => {
+        const matchingProduct = productData.find(pd => pd.slug === p.slug);
+        return {
+            productId: p.id,
+            url: matchingProduct?.imageUrl || `https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=800&auto=format&fit=crop`,
+            altText: p.name,
+            position: 0,
+        };
+    });
 
     await db.insert(productImages).values(imageData).onConflictDoNothing();
     console.log(`✅ ${imageData.length} product images created`);

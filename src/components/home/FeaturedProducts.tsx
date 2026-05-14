@@ -71,7 +71,7 @@ export default async function FeaturedProducts() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {featuredProducts.map((product) => (
+                    {featuredProducts.map((product, index) => (
                         <ProductCard
                             key={product.id}
                             id={product.id}
@@ -82,6 +82,7 @@ export default async function FeaturedProducts() {
                             categoryName={product.categoryName}
                             imageUrl={product.imageUrl}
                             variants={product.variants}
+                            priority={index < 2}
                         />
                     ))}
                 </div>

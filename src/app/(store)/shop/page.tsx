@@ -39,7 +39,7 @@ async function getShopProducts(params: {
                 .select({ id: categories.id })
                 .from(categories)
                 .where(inArray(categories.slug, params.category));
-            
+
             if (catIds.length > 0) {
                 conditions.push(inArray(products.categoryId, catIds.map(c => c.id)));
             }
@@ -107,19 +107,19 @@ async function getAllCategories() {
 export default async function ShopPage({
     searchParams,
 }: {
-    searchParams: Promise<{ 
-        search?: string; 
-        category?: string | string[]; 
+    searchParams: Promise<{
+        search?: string;
+        category?: string | string[];
         price?: string;
         sort?: string;
     }>;
 }) {
     const resolvedSearchParams = await searchParams;
     const search = resolvedSearchParams.search || null;
-    
+
     // Normalize category to array
     const categoryParam = resolvedSearchParams.category;
-    const categoriesFilter = categoryParam 
+    const categoriesFilter = categoryParam
         ? (Array.isArray(categoryParam) ? categoryParam : [categoryParam])
         : null;
 
@@ -148,43 +148,45 @@ export default async function ShopPage({
     ]);
 
     return (
-        <div className="bg-mk-gray dark:bg-background min-h-screen pb-20 transition-colors">
-            {/* Header */}
-            <div className="bg-white dark:bg-card border-b border-border/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 animate-fade-in">
-                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-mk-dark dark:text-foreground mb-4">
-                        {search ? `Search Results for "${search}"` : "Shop All"}
-                    </h1>
-                    <p className="text-lg text-muted-foreground mb-8 max-w-2xl leading-relaxed">
-                        {search
-                            ? `Showing exactly what matches your search criteria.`
-                            : `Explore our entire collection of premium tech accessories designed to elevate your everyday carry.`}
+        <div className="bg-white dark:bg-background min-h-screen pb-20">
+            {/* Page Header */}
+            <div className="border-b border-border bg-white dark:bg-background">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-12 animate-fade-in">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
+                        {search ? "Search results" : "Accessories"}
                     </p>
-
-                    <div className="max-w-xl">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2">
+                        {search ? `"${search}"` : "Shop All"}
+                    </h1>
+                    {!search && (
+                        <p className="text-muted-foreground text-sm max-w-xl leading-relaxed mb-6">
+                            Our full collection of premium tech accessories, delivered across Kenya.
+                        </p>
+                    )}
+                    <div className="max-w-md">
                         <SearchBar />
                     </div>
                 </div>
             </div>
 
             {/* Main Content Layout */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="flex flex-col lg:flex-row gap-10">
-                    
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div className="flex flex-col lg:flex-row gap-8">
+
                     {/* Sidebar Filters */}
-                    <aside className="w-full lg:w-64 flex-shrink-0">
-                        <FilterSidebar 
-                            categories={allCategoriesList} 
+                    <aside className="w-full lg:w-56 flex-shrink-0">
+                        <FilterSidebar
+                            categories={allCategoriesList}
                             activeCategories={categoriesFilter || []}
                             activePrice={resolvedSearchParams.price || null}
                         />
                     </aside>
 
                     {/* Product Grid Area */}
-                    <div className="flex-1">
-                        {/* Top Bar (Mobile filter toggle & Sort) */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-white dark:bg-card p-4 rounded-2xl border border-border/50 shadow-sm animate-fade-in relative z-20" style={{ animationDelay: "0.1s" }}>
-                            
+                    <div className="flex-1 min-w-0">
+                        {/* Top Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-border animate-fade-in" style={{ animationDelay: "0.1s" }}>
+
                             <div className="text-sm text-muted-foreground">
                                 Showing <span className="font-semibold text-foreground">{shopProducts.length}</span> results
                             </div>
@@ -198,22 +200,22 @@ export default async function ShopPage({
                         {/* Active Filter Tags (Optional, can be added later if requested) */}
 
                         {shopProducts.length === 0 ? (
-                            <div className="text-center py-24 bg-white dark:bg-card rounded-3xl border border-border/50 shadow-sm animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <span className="text-3xl">🔍</span>
+                            <div className="text-center py-24 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                                <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-5">
+                                    <span className="text-2xl">🔍</span>
                                 </div>
-                                <h2 className="text-2xl font-bold mb-2">No products found</h2>
-                                <p className="text-muted-foreground max-w-md mx-auto">
-                                    Try adjusting your filters or search terms to find what you're looking for.
+                                <h2 className="text-xl font-bold mb-2">No products found</h2>
+                                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                    Try adjusting your filters or search terms.
                                 </p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                                {shopProducts.map((product) => (
+                                {shopProducts.map((product, index) => (
                                     <ProductCard
                                         key={product.id}
-                                        id={product.id}
                                         {...product}
+                                        priority={index < 6}
                                     />
                                 ))}
                             </div>

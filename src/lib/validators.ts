@@ -86,12 +86,11 @@ export const adminLoginSchema = z.object({
 export const updateOrderStatusSchema = z.object({
     orderStatus: z.enum([
         "pending",
-        "paid",
         "processing",
         "shipped",
         "delivered",
         "cancelled",
-    ]),
+    ]).optional(),
     paymentStatus: z
         .enum(["pending", "completed", "failed", "refunded"])
         .optional(),

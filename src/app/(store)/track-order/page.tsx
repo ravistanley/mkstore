@@ -18,6 +18,7 @@ type OrderDetails = {
     deliveryFee: number;
     total: number;
     createdAt: string;
+    updatedAt: string;
     items: Array<{
         productName: string;
         variantName: string | null;
@@ -66,9 +67,12 @@ export default function TrackOrderPage() {
         const statuses = ["pending", "processing", "shipped", "delivered"];
         if (status === "cancelled") {
             return (
-                <div className="flex items-center gap-2 text-destructive bg-destructive/10 p-4 rounded-xl">
-                    <XCircle className="w-6 h-6" />
-                    <span className="font-semibold">Order Cancelled</span>
+                <div className="flex items-center gap-4 text-destructive bg-destructive/10 p-6 rounded-2xl">
+                    <XCircle className="w-8 h-8 shrink-0" />
+                    <div>
+                        <h4 className="font-bold text-lg">Order Cancelled</h4>
+                        <p className="text-sm opacity-80 mt-1">This order has been cancelled and will not be delivered.</p>
+                    </div>
                 </div>
             );
         }
@@ -76,37 +80,67 @@ export default function TrackOrderPage() {
         const currentIndex = statuses.indexOf(status);
 
         return (
-            <div className="relative">
-                <div className="absolute top-1/2 left-0 w-full h-1 bg-muted -translate-y-1/2 z-0 rounded-full" />
-                <div
-                    className="absolute top-1/2 left-0 h-1 bg-primary -translate-y-1/2 z-0 rounded-full transition-all duration-500"
-                    style={{ width: `${(Math.max(0, currentIndex) / (statuses.length - 1)) * 100}%` }}
-                />
+            <div className="space-y-8 pl-2 md:pl-4">
+                {statuses.map((s, i) => {
+                    const isCompleted = currentIndex >= i;
+                    const isCurrent = currentIndex === i;
 
-                <div className="relative z-10 flex justify-between">
-                    {statuses.map((s, i) => {
-                        const isCompleted = currentIndex >= i;
-                        const isCurrent = currentIndex === i;
+                    let Icon = Clock;
+                    let title = "Order Placed";
+                    let desc = "Your order has been received and is waiting to be processed.";
+                    
+                    if (s === "processing") {
+                        Icon = Package;
+                        title = "Processing";
+                        desc = "Your order is being prepared and packed.";
+                    }
+                    if (s === "shipped") {
+                        Icon = Truck;
+                        title = "Shipped";
+                        desc = "Your order has been handed over to the delivery partner and is on the way.";
+                    }
+                    if (s === "delivered") {
+                        Icon = CheckCircle2;
+                        title = "Delivered";
+                        desc = "Your order has been successfully delivered to your location.";
+                    }
 
-                        let Icon = Clock;
-                        if (s === "processing") Icon = Package;
-                        if (s === "shipped") Icon = Truck;
-                        if (s === "delivered") Icon = CheckCircle2;
+                    let dateStr = "";
+                    if (s === "pending" && isCompleted && order?.createdAt) {
+                        dateStr = new Date(order.createdAt).toLocaleString("en-KE", { dateStyle: 'medium', timeStyle: 'short' });
+                    } else if (isCurrent && s !== "pending" && order?.updatedAt) {
+                        dateStr = new Date(order.updatedAt).toLocaleString("en-KE", { dateStyle: 'medium', timeStyle: 'short' });
+                    }
 
-                        return (
-                            <div key={s} className="flex flex-col items-center gap-2">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isCompleted ? "bg-primary text-primary-foreground shadow-md" : "bg-white dark:bg-muted border-2 border-muted text-muted-foreground"
-                                    }`}>
-                                    <Icon className="w-5 h-5" />
-                                </div>
-                                <span className={`text-xs font-semibold uppercase tracking-wider ${isCurrent ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"
-                                    }`}>
-                                    {s}
-                                </span>
+                    return (
+                        <div key={s} className="relative flex items-start gap-6">
+                            {/* Connecting line */}
+                            {i !== statuses.length - 1 && (
+                                <div className={`absolute top-10 bottom-[-32px] left-[19px] w-0.5 transition-colors duration-500 ${currentIndex > i ? 'bg-primary' : 'bg-muted'}`} />
+                            )}
+                            
+                            <div className={`relative z-10 w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-all duration-500 ${
+                                isCurrent ? "bg-primary text-primary-foreground shadow-lg ring-4 ring-primary/20 scale-110" : 
+                                isCompleted ? "bg-primary text-primary-foreground" : 
+                                "bg-muted text-muted-foreground"
+                            }`}>
+                                <Icon className="w-5 h-5" />
                             </div>
-                        );
-                    })}
-                </div>
+                            
+                            <div className={`flex flex-col pt-1.5 transition-opacity duration-500 ${isCurrent ? 'opacity-100' : isCompleted ? 'opacity-90' : 'opacity-40'}`}>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
+                                    <h4 className={`text-base font-bold capitalize ${isCurrent ? 'text-primary' : 'text-foreground'}`}>{title}</h4>
+                                    {dateStr && (
+                                        <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full w-fit">
+                                            {dateStr}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{desc}</p>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         );
     };

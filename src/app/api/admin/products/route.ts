@@ -18,14 +18,51 @@ async function requireAdmin() {
     return session;
 }
 
-// GET /api/admin/products — List all products
-export async function GET() {
+// GET /api/admin/products — List all products or get single product
+export async function GET(request: NextRequest) {
     const session = await requireAdmin();
     if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
+        const id = request.nextUrl.searchParams.get("id");
+
+        if (id) {
+            const [product] = await db
+                .select({
+                    id: products.id,
+                    name: products.name,
+                    slug: products.slug,
+                    description: products.description,
+                    price: products.price,
+                    compareAtPrice: products.compareAtPrice,
+                    categoryId: products.categoryId,
+                    featured: products.featured,
+                    active: products.active,
+                    createdAt: products.createdAt,
+                    updatedAt: products.updatedAt,
+                })
+                .from(products)
+                .where(eq(products.id, id))
+                .limit(1);
+
+            if (!product) {
+                return NextResponse.json({ error: "Product not found" }, { status: 404 });
+            }
+
+            const productVars = await db.select().from(productVariants).where(eq(productVariants.productId, id));
+            const productImgs = await db.select().from(productImages).where(eq(productImages.productId, id)).orderBy(productImages.position);
+
+            return NextResponse.json({
+                ...product,
+                price: Number(product.price),
+                compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+                variants: productVars,
+                images: productImgs,
+            });
+        }
+
         const allProducts = await db
             .select({
                 id: products.id,
@@ -46,15 +83,19 @@ export async function GET() {
         const allVariants = await db.select().from(productVariants);
         const allImages = await db.select().from(productImages);
 
-        const enriched = allProducts.map((p) => ({
-            ...p,
-            price: Number(p.price),
-            variantCount: allVariants.filter((v) => v.productId === p.id).length,
-            imageCount: allImages.filter((img) => img.productId === p.id).length,
-            totalStock: allVariants
-                .filter((v) => v.productId === p.id)
-                .reduce((sum, v) => sum + v.stockQuantity, 0),
-        }));
+        const enriched = allProducts.map((p) => {
+            const pImages = allImages.filter((img) => img.productId === p.id).sort((a, b) => a.position - b.position);
+            const pVariants = allVariants.filter((v) => v.productId === p.id);
+
+            return {
+                ...p,
+                price: Number(p.price),
+                variantCount: pVariants.length,
+                imageCount: pImages.length,
+                imageUrl: pImages.length > 0 ? pImages[0].url : null,
+                totalStock: pVariants.reduce((sum, v) => sum + v.stockQuantity, 0),
+            };
+        });
 
         return NextResponse.json({ products: enriched });
     } catch (error) {
@@ -123,8 +164,16 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ success: true, product });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Admin product create error:", error);
+        
+        if (error.code === '23505' && error.constraint === 'products_slug_key') {
+            return NextResponse.json(
+                { error: "A product with this name already exists. Please choose a different name." },
+                { status: 400 }
+            );
+        }
+
         return NextResponse.json(
             { error: "Failed to create product" },
             { status: 500 }
@@ -170,9 +219,60 @@ export async function PUT(request: NextRequest) {
 
         await db.update(products).set(updateData).where(eq(products.id, id));
 
+        // Update images
+        if (images && Array.isArray(images)) {
+            await db.delete(productImages).where(eq(productImages.productId, id));
+            for (let i = 0; i < images.length; i++) {
+                await db.insert(productImages).values({
+                    productId: id,
+                    url: images[i].url,
+                    altText: images[i].altText || "Product Image",
+                    position: i,
+                });
+            }
+        }
+
+        // Update variants
+        if (variants && Array.isArray(variants)) {
+            const existingVariants = await db.select().from(productVariants).where(eq(productVariants.productId, id));
+            const existingIds = existingVariants.map(v => v.id);
+            const payloadIds = variants.map(v => v.id).filter(Boolean);
+
+            const toDelete = existingIds.filter(vId => !payloadIds.includes(vId));
+            for (const dId of toDelete) {
+                await db.delete(productVariants).where(eq(productVariants.id, dId));
+            }
+
+            for (const variant of variants) {
+                const vParsed = createVariantSchema.safeParse(variant);
+                if (vParsed.success) {
+                    if (variant.id) {
+                        await db.update(productVariants).set({
+                            ...vParsed.data,
+                            priceOverride: vParsed.data.priceOverride?.toFixed(2) || null,
+                        }).where(eq(productVariants.id, variant.id));
+                    } else {
+                        await db.insert(productVariants).values({
+                            productId: id,
+                            ...vParsed.data,
+                            priceOverride: vParsed.data.priceOverride?.toFixed(2) || null,
+                        });
+                    }
+                }
+            }
+        }
+
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Admin product update error:", error);
+        
+        if (error.code === '23505' && error.constraint === 'products_slug_key') {
+            return NextResponse.json(
+                { error: "A product with this name already exists. Please choose a different name." },
+                { status: 400 }
+            );
+        }
+
         return NextResponse.json(
             { error: "Failed to update product" },
             { status: 500 }
@@ -199,8 +299,16 @@ export async function DELETE(request: NextRequest) {
         await db.delete(products).where(eq(products.id, id));
 
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Admin product delete error:", error);
+
+        if (error.code === '23503') {
+            return NextResponse.json(
+                { error: "Cannot delete this product because it is part of existing customer orders. Please mark it as 'Draft' to hide it from the store instead." },
+                { status: 400 }
+            );
+        }
+
         return NextResponse.json(
             { error: "Failed to delete product" },
             { status: 500 }

@@ -77,24 +77,24 @@ export default async function AdminDashboardPage() {
     return (
         <div className="space-y-8 animate-fade-in">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-mk-dark">Dashboard</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
                 <p className="text-muted-foreground mt-2">Overview of your store's performance.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {cards.map((card, i) => (
-                    <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 flex flex-col gap-4">
+                    <div key={i} className="bg-card p-6 rounded-2xl shadow-sm border border-border flex flex-col gap-4">
                         <div className="flex justify-between items-start">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.bg}`}>
                                 <card.icon className={`w-6 h-6 ${card.color}`} />
                             </div>
-                            <Link href={card.link} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-mk-gray transition-colors text-muted-foreground hover:text-mk-dark">
+                            <Link href={card.link} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
                                 <ArrowUpRight className="w-4 h-4" />
                             </Link>
                         </div>
                         <div>
                             <p className="text-muted-foreground text-sm font-medium">{card.title}</p>
-                            <p className="text-2xl font-bold text-mk-dark mt-1">{card.value}</p>
+                            <p className="text-2xl font-bold text-foreground mt-1">{card.value}</p>
                         </div>
                     </div>
                 ))}
@@ -102,3 +102,4 @@ export default async function AdminDashboardPage() {
         </div>
     );
 }
+

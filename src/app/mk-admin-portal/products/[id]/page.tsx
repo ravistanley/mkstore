@@ -6,9 +6,14 @@ import { Plus, X, UploadCloud, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
-export default function ProductForm({ productId }: { productId: string }) {
+import { use } from "react";
+
+export default function ProductForm({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
+    const unwrappedParams = use(params);
+    const productId = unwrappedParams.id;
     const isEdit = productId !== "new";
 
     const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -38,7 +43,10 @@ export default function ProductForm({ productId }: { productId: string }) {
 
     const fetchCategories = async () => {
         const res = await fetch("/api/admin/categories");
-        if (res.ok) setCategories(await res.json());
+        if (res.ok) {
+            const data = await res.json();
+            setCategories(data.categories || []);
+        }
     };
 
     const fetchProduct = async () => {
@@ -58,24 +66,46 @@ export default function ProductForm({ productId }: { productId: string }) {
             setImages(data.images || []);
         } catch (error) {
             console.error(error);
-            alert("Failed to load product");
+            toast.error("Failed to load product");
             router.push("/mk-admin-portal/products");
         } finally {
             setIsLoading(false);
         }
     };
 
+    const generateSlug = (text: string) => {
+        return text
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)+/g, "");
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
 
-        // Fake upload for UI since we don't have cloudinary keys verified
-        // In production, you'd post to /api/admin/upload via FormData
+        const file = e.target.files[0];
         setUploadingImage(true);
-        setTimeout(() => {
-            setImages([...images, { url: "/placeholder.svg", altText: name }]);
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/api/admin/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Upload failed");
+
+            const data = await res.json();
+            setImages([...images, { url: data.url, altText: name }]);
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to upload image. Please check your Cloudinary configuration.");
+        } finally {
             setUploadingImage(false);
             if (e.target) e.target.value = '';
-        }, 1000);
+        }
     };
 
     const addVariant = () => {
@@ -97,20 +127,25 @@ export default function ProductForm({ productId }: { productId: string }) {
         setIsSubmitting(true);
 
         try {
-            const payload = {
+            const payload: any = {
                 name,
+                slug: generateSlug(name),
                 description,
-                price,
-                compareAtPrice: compareAtPrice || null,
+                price: Number(price),
+                compareAtPrice: compareAtPrice ? Number(compareAtPrice) : null,
                 categoryId: categoryId || null,
                 featured,
                 active,
-                variants: variants.map(v => ({ ...v, priceOverride: v.priceOverride || null })),
+                variants: variants.map(v => ({ ...v, priceOverride: v.priceOverride ? Number(v.priceOverride) : null })),
                 images,
             };
 
-            const url = isEdit ? `/api/admin/products?id=${productId}` : "/api/admin/products";
-            const method = isEdit ? "PATCH" : "POST";
+            if (isEdit) {
+                payload.id = productId;
+            }
+
+            const url = "/api/admin/products";
+            const method = isEdit ? "PUT" : "POST";
 
             const res = await fetch(url, {
                 method,
@@ -120,14 +155,19 @@ export default function ProductForm({ productId }: { productId: string }) {
 
             if (!res.ok) {
                 const err = await res.json();
+                if (typeof err.error === 'object' && err.error !== null) {
+                    const messages = Object.entries(err.error).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n');
+                    throw new Error(messages);
+                }
                 throw new Error(err.error || "Failed to save product");
             }
 
+            toast.success(isEdit ? "Product updated successfully!" : "Product created successfully!");
             router.push("/mk-admin-portal/products");
             router.refresh();
         } catch (error) {
             console.error(error);
-            alert(error instanceof Error ? error.message : "An error occurred");
+            toast.error(error instanceof Error ? error.message : "An error occurred");
             setIsSubmitting(false);
         }
     };
@@ -144,7 +184,7 @@ export default function ProductForm({ productId }: { productId: string }) {
                     <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-mk-dark">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         {isEdit ? "Edit Product" : "Add New Product"}
                     </h1>
                 </div>
@@ -156,16 +196,16 @@ export default function ProductForm({ productId }: { productId: string }) {
                 <div className="lg:col-span-2 space-y-8">
 
                     {/* Basic Info */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-6">
-                        <h2 className="text-lg font-bold text-mk-dark">Basic Details</h2>
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-6">
+                        <h2 className="text-lg font-bold text-foreground">Basic Details</h2>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-mk-dark">Product Name *</label>
+                            <label className="text-sm font-semibold text-foreground">Product Name *</label>
                             <Input required value={name} onChange={e => setName(e.target.value)} className="bg-muted/50 border-0" placeholder="e.g. Premium Leather Laptop Sleeve" />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-mk-dark">Description</label>
+                            <label className="text-sm font-semibold text-foreground">Description</label>
                             <Textarea
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
@@ -176,14 +216,19 @@ export default function ProductForm({ productId }: { productId: string }) {
                     </div>
 
                     {/* Media */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-6">
-                        <h2 className="text-lg font-bold text-mk-dark">Media</h2>
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-6">
+                        <h2 className="text-lg font-bold text-foreground">Media</h2>
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             {images.map((img, i) => (
-                                <div key={i} className="aspect-square bg-muted rounded-xl border border-border/50 relative group overflow-hidden">
-                                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">IMG {i + 1}</div>
-                                    <button type="button" onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div key={i} className="aspect-square bg-muted rounded-xl border border-border relative group overflow-hidden">
+                                    {img.url ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img src={img.url} alt={img.altText || `Image ${i + 1}`} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">IMG {i + 1}</div>
+                                    )}
+                                    <button type="button" onClick={() => setImages(images.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                         <X className="w-3 h-3" />
                                     </button>
                                 </div>
@@ -204,9 +249,9 @@ export default function ProductForm({ productId }: { productId: string }) {
                     </div>
 
                     {/* Variants */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-6">
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-6">
                         <div className="flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-mk-dark">Variants & Inventory</h2>
+                            <h2 className="text-lg font-bold text-foreground">Variants & Inventory</h2>
                             <Button type="button" variant="outline" size="sm" onClick={addVariant} className="gap-2">
                                 <Plus className="w-4 h-4" /> Add Variant
                             </Button>
@@ -219,7 +264,7 @@ export default function ProductForm({ productId }: { productId: string }) {
                         ) : (
                             <div className="space-y-4">
                                 {variants.map((v, i) => (
-                                    <div key={i} className="grid sm:grid-cols-12 gap-4 p-4 rounded-xl border border-border/50 bg-muted/10 relative group items-start">
+                                    <div key={i} className="grid sm:grid-cols-12 gap-4 p-4 rounded-xl border border-border bg-muted/10 relative group items-start">
                                         <button type="button" onClick={() => removeVariant(i)} className="absolute -top-2 -right-2 w-6 h-6 bg-background border shadow-sm text-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <X className="w-3 h-3" />
                                         </button>
@@ -230,11 +275,11 @@ export default function ProductForm({ productId }: { productId: string }) {
                                         </div>
                                         <div className="sm:col-span-3 space-y-1">
                                             <label className="text-[10px] uppercase font-bold text-muted-foreground">SKU (Opt)</label>
-                                            <Input value={v.sku} onChange={e => updateVariant(i, 'sku', e.target.value)} placeholder="MK-001" className="h-10 text-sm" />
+                                            <Input value={v.sku || ""} onChange={e => updateVariant(i, 'sku', e.target.value)} placeholder="MK-001" className="h-10 text-sm" />
                                         </div>
                                         <div className="sm:col-span-3 space-y-1">
                                             <label className="text-[10px] uppercase font-bold text-muted-foreground">Price Override</label>
-                                            <Input value={v.priceOverride} onChange={e => updateVariant(i, 'priceOverride', e.target.value)} placeholder="KSh" type="number" className="h-10 text-sm" />
+                                            <Input value={v.priceOverride || ""} onChange={e => updateVariant(i, 'priceOverride', e.target.value)} placeholder="KSh" type="number" className="h-10 text-sm" />
                                         </div>
                                         <div className="sm:col-span-2 space-y-1">
                                             <label className="text-[10px] uppercase font-bold text-muted-foreground">Stock</label>
@@ -252,8 +297,8 @@ export default function ProductForm({ productId }: { productId: string }) {
                 <div className="space-y-8">
 
                     {/* Status */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-6">
-                        <h2 className="text-lg font-bold text-mk-dark">Status</h2>
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-6">
+                        <h2 className="text-lg font-bold text-foreground">Status</h2>
 
                         <div className="space-y-4">
                             <label className="flex items-center justify-between p-3 border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
@@ -275,11 +320,11 @@ export default function ProductForm({ productId }: { productId: string }) {
                     </div>
 
                     {/* Organization */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-6">
-                        <h2 className="text-lg font-bold text-mk-dark">Organization</h2>
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-6">
+                        <h2 className="text-lg font-bold text-foreground">Organization</h2>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-mk-dark">Category</label>
+                            <label className="text-sm font-semibold text-foreground">Category</label>
                             <select
                                 value={categoryId}
                                 onChange={e => setCategoryId(e.target.value)}
@@ -294,16 +339,16 @@ export default function ProductForm({ productId }: { productId: string }) {
                     </div>
 
                     {/* Pricing */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-border/50 space-y-6">
-                        <h2 className="text-lg font-bold text-mk-dark">Base Pricing</h2>
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-6">
+                        <h2 className="text-lg font-bold text-foreground">Base Pricing</h2>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-mk-dark">Base Price (KSh) *</label>
+                            <label className="text-sm font-semibold text-foreground">Base Price (KSh) *</label>
                             <Input required type="number" value={price} onChange={e => setPrice(e.target.value)} className="bg-muted/50 border-0" placeholder="e.g. 2500" />
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-mk-dark">Compare at Price (Optional)</label>
+                            <label className="text-sm font-semibold text-foreground">Compare at Price (Optional)</label>
                             <Input type="number" value={compareAtPrice} onChange={e => setCompareAtPrice(e.target.value)} className="bg-muted/50 border-0" placeholder="e.g. 3000" />
                             <p className="text-xs text-muted-foreground">Shows as crossed-out price for discounts.</p>
                         </div>
@@ -314,7 +359,7 @@ export default function ProductForm({ productId }: { productId: string }) {
             </form>
 
             {/* Floating Action Bar */}
-            <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-border z-10">
+            <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-4 bg-card/80 backdrop-blur-md border-t border-border z-10">
                 <div className="max-w-5xl mx-auto flex justify-between items-center">
                     <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
                     <Button onClick={handleSubmit} disabled={isSubmitting} size="lg" className="w-32">

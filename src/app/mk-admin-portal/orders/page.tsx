@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, Loader2, Eye, Truck, Package, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,6 +18,7 @@ type Order = {
 };
 
 export default function AdminOrdersPage() {
+    const router = useRouter();
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -34,9 +36,13 @@ export default function AdminOrdersPage() {
                 : `/api/admin/orders?status=${statusFilter}`;
 
             const res = await fetch(url);
+            if (res.status === 401) {
+                router.replace("/mk-admin-portal/login");
+                return;
+            }
             if (res.ok) {
                 const data = await res.json();
-                setOrders(data);
+                setOrders(data.orders || []);
             }
         } catch (error) {
             console.error("Failed to fetch orders", error);
@@ -75,12 +81,12 @@ export default function AdminOrdersPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-mk-dark">Orders</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Orders</h1>
                     <p className="text-muted-foreground mt-1">Manage and fulfill customer orders.</p>
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-border/50 flex flex-col sm:flex-row justify-between gap-4">
+            <div className="bg-card p-4 rounded-2xl shadow-sm border border-border flex flex-col sm:flex-row justify-between gap-4">
                 <div className="relative w-full max-w-md">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -106,7 +112,7 @@ export default function AdminOrdersPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
                 {isLoading ? (
                     <div className="p-8 flex justify-center text-muted-foreground">
                         <Loader2 className="w-8 h-8 animate-spin" />
@@ -129,7 +135,11 @@ export default function AdminOrdersPage() {
                             </div>
 
                             {filteredOrders.map((order) => (
-                                <div key={order.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/10 transition-colors">
+                                <div 
+                                    key={order.id} 
+                                    onClick={() => router.push(`/mk-admin-portal/orders/${order.id}`)}
+                                    className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/50 transition-colors cursor-pointer"
+                                >
                                     <div className="col-span-2 font-semibold text-sm text-primary">{order.orderNumber}</div>
                                     <div className="col-span-2 text-sm text-muted-foreground">
                                         {new Date(order.createdAt).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -145,9 +155,9 @@ export default function AdminOrdersPage() {
                                     </div>
 
                                     <div className="col-span-1 flex justify-end">
-                                        <Link href={`/mk-admin-portal/orders/${order.id}`} className={buttonVariants({ variant: "ghost", size: "icon" })}>
-                                            <Eye className="w-4 h-4 text-muted-foreground hover:text-mk-dark transition-colors" />
-                                        </Link>
+                                        <div className={buttonVariants({ variant: "ghost", size: "icon" })}>
+                                            <Eye className="w-4 h-4 text-muted-foreground transition-colors" />
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -158,3 +168,4 @@ export default function AdminOrdersPage() {
         </div>
     );
 }
+

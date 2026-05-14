@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
     };
 
     return (
-        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-border/50">
+        <div className="bg-card/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-border">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
                 {error && (
@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
                             id="email"
                             type="email"
                             placeholder="admin@mkstore.co.ke"
-                            className="pl-11 h-12 bg-white rounded-xl"
+                            className="pl-11 h-12 bg-card rounded-xl"
                             {...form.register("email")}
                         />
                     </div>
@@ -87,13 +87,13 @@ export default function AdminLoginPage() {
                             id="password"
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="pl-11 pr-11 h-12 bg-white rounded-xl"
+                            className="pl-11 pr-11 h-12 bg-card rounded-xl"
                             {...form.register("password")}
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-mk-dark transition-colors"
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         >
                             {showPassword ? (
                                 <EyeOff className="w-5 h-5" />
@@ -129,3 +129,4 @@ export default function AdminLoginPage() {
         </div>
     );
 }
+
