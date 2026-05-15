@@ -1,17 +1,10 @@
-import AdminSidebar from "@/components/admin/AdminSidebar";
-
-export default function AdminPortalLayout({
+// Root admin layout — passthrough only.
+// Authenticated pages live in (portal)/ which has the sidebar layout.
+// The login page lives in login/ and gets only this clean passthrough.
+export default function AdminRootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <div className="min-h-screen bg-muted dark:bg-background lg:pl-64 flex flex-col">
-            <AdminSidebar />
-            <main className="flex-1 p-6 md:p-8">
-                {children}
-            </main>
-        </div>
-    );
+    return <>{children}</>;
 }
-

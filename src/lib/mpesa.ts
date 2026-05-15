@@ -139,6 +139,7 @@ export function processMpesaCallback(body: Record<string, unknown>): {
     transactionDate?: string;
     phoneNumber?: string;
     amount?: number;
+    checkoutRequestId?: string;
 } {
     const stkCallback = (body.Body as Record<string, unknown>)?.stkCallback as Record<string, unknown>;
 
@@ -162,6 +163,7 @@ export function processMpesaCallback(body: Record<string, unknown>): {
     let transactionDate = "";
     let phoneNumber = "";
     let amount = 0;
+    const checkoutRequestId = stkCallback.CheckoutRequestID as string;
 
     if (metadata) {
         for (const item of metadata) {
@@ -190,5 +192,6 @@ export function processMpesaCallback(body: Record<string, unknown>): {
         transactionDate,
         phoneNumber,
         amount,
+        checkoutRequestId,
     };
 }

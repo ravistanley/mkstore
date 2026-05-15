@@ -154,7 +154,10 @@ export default function CheckoutPage() {
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <button
                                     type="button"
-                                    onClick={() => form.setValue("deliveryMethod", "delivery")}
+                                    onClick={() => {
+                                        form.setValue("deliveryMethod", "delivery");
+                                        form.setValue("deliveryLocation", "");
+                                    }}
                                     className={`p-4 rounded-xl border text-center transition-all ${deliveryMethod === "delivery"
                                         ? "border-primary bg-primary/5 shadow-sm text-primary"
                                         : "border-border hover:border-primary/50 text-muted-foreground"
@@ -166,7 +169,10 @@ export default function CheckoutPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => form.setValue("deliveryMethod", "pickup")}
+                                    onClick={() => {
+                                        form.setValue("deliveryMethod", "pickup");
+                                        form.setValue("deliveryLocation", "Pickup at MkStore HQ");
+                                    }}
                                     className={`p-4 rounded-xl border text-center transition-all ${deliveryMethod === "pickup"
                                         ? "border-primary bg-primary/5 shadow-sm text-primary"
                                         : "border-border hover:border-primary/50 text-muted-foreground"
@@ -210,8 +216,6 @@ export default function CheckoutPage() {
                                         MkStore HQ, Nairobi CBD.<br />
                                         We'll contact you when your order is ready for pickup.
                                     </p>
-                                    {/* Need to set a dummy location to pass zod validation */}
-                                    <input type="hidden" {...form.register("deliveryLocation")} value="Pickup at MkStore HQ" />
                                 </div>
                             )}
                         </section>

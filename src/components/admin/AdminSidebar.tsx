@@ -7,9 +7,8 @@ import {
     Package,
     Tags,
     ShoppingCart,
-    Settings,
+    TrendingUp,
     LogOut,
-    Menu,
     Sun,
     Moon
 } from "lucide-react";
@@ -35,6 +34,15 @@ export default function AdminSidebar() {
             activeText: "text-purple-400",
             hoverBg: "hover:bg-purple-500/10",
             hoverText: "hover:text-purple-300"
+        },
+        { 
+            href: "/mk-admin-portal/revenue", 
+            label: "Revenue", 
+            icon: TrendingUp,
+            activeBg: "bg-green-500/20",
+            activeText: "text-green-400",
+            hoverBg: "hover:bg-green-500/10",
+            hoverText: "hover:text-green-300"
         },
         { 
             href: "/mk-admin-portal/orders", 

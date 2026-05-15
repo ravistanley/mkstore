@@ -118,7 +118,7 @@ export default function AdminLoginPage() {
                             Authenticating...
                         </>
                     ) : (
-                        "Sign In Component"
+                        "Sign In"
                     )}
                 </Button>
             </form>

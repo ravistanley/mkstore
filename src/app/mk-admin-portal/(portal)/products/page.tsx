@@ -202,9 +202,7 @@ export default function AdminProductsPage() {
                     )}
 
                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline" disabled={isDeleting}>Cancel</Button>
-                        </DialogClose>
+                        <Button variant="outline" disabled={isDeleting} onClick={() => setProductToDelete(null)}>Cancel</Button>
                         <Button 
                             variant="destructive" 
                             disabled={isDeleting}

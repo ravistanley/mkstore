@@ -30,6 +30,8 @@ type OrderDetail = {
     createdAt: string;
     updatedAt: string;
     items: OrderItem[];
+    payments: any[];
+    deliveryTracking: any[];
 };
 
 export default function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,6 +50,10 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
             // We'll reuse the client tracking endpoint or we can make an admin specific one
             // For now, let's create a dedicated admin fetch (assuming we have one or we'll make it)
             const res = await fetch(`/api/admin/orders?id=${resolvedParams.id}`);
+            if (res.status === 401) {
+                router.replace("/mk-admin-portal/login");
+                return;
+            }
             if (res.ok) {
                 const data = await res.json();
                 setOrder(data);
@@ -72,12 +78,19 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                 body: JSON.stringify({ id: order?.id, [field]: value }),
             });
 
-            if (!res.ok) throw new Error("Update failed");
+            if (res.status === 401) {
+                router.replace("/mk-admin-portal/login");
+                return;
+            }
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "Update failed");
+            }
 
             setOrder(prev => prev ? { ...prev, [field]: value } : null);
         } catch (error) {
             console.error(error);
-            alert("Failed to update status");
+            alert(error instanceof Error ? error.message : "Failed to update status");
         } finally {
             setIsUpdating(false);
         }
@@ -106,11 +119,11 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             <h1 className="text-2xl font-bold tracking-tight text-foreground">
                                 Order {order.orderNumber}
                             </h1>
-                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${order.paymentStatus === 'completed' ? 'bg-[#4ade80]/10 text-[#4ade80]' :
+                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${order.paymentStatus === 'success' ? 'bg-[#4ade80]/10 text-[#4ade80]' :
                                 order.paymentStatus === 'failed' ? 'bg-destructive/10 text-destructive' :
                                     'bg-amber-500/10 text-amber-600'
                                 }`}>
-                                {order.paymentStatus}
+                                {order.paymentStatus.replace('_', ' ')}
                             </span>
                         </div>
                         <p className="text-muted-foreground text-sm flex items-center gap-2 mt-1">
@@ -190,7 +203,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                 >
                                     <option value="pending">Pending</option>
                                     <option value="processing">Processing</option>
-                                    <option value="shipped">Shipped</option>
+                                    <option value="dispatched">Dispatched</option>
                                     <option value="delivered">Delivered</option>
                                     <option value="cancelled">Cancelled</option>
                                 </select>
@@ -199,7 +212,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             <div className="flex-1 w-full">
                                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Payment Status</label>
                                 <select
-                                    className={`w-full h-12 px-4 rounded-xl border-2 uppercase font-bold text-sm transition-colors ${order.paymentStatus === 'completed' ? 'border-[#4ade80] text-[#4ade80] bg-[#4ade80]/5' :
+                                    className={`w-full h-12 px-4 rounded-xl border-2 uppercase font-bold text-sm transition-colors ${order.paymentStatus === 'success' ? 'border-[#4ade80] text-[#4ade80] bg-[#4ade80]/5' :
                                         order.paymentStatus === 'failed' ? 'border-destructive text-destructive bg-destructive/5' :
                                             'border-amber-500 text-amber-600 bg-amber-500/5'
                                         }`}
@@ -208,8 +221,9 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                     disabled={isUpdating}
                                 >
                                     <option value="pending">Pending</option>
-                                    <option value="completed">Completed (Paid)</option>
+                                    <option value="success">Success (Paid)</option>
                                     <option value="failed">Failed</option>
+                                    <option value="refunded">Refunded</option>
                                 </select>
                             </div>
 
@@ -262,12 +276,55 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             <p className="flex justify-between"><span className="text-muted-foreground">Method:</span> <span className="font-medium uppercase tracking-wide text-xs">{order.paymentMethod.replace('_', ' ')}</span></p>
                             <p className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Status:</span>
-                                {order.paymentStatus === 'completed' ? (
+                                {order.paymentStatus === 'success' ? (
                                     <span className="flex items-center gap-1 text-[#4ade80] font-bold"><CheckCircle2 className="w-3 h-3" /> Paid</span>
                                 ) : (
-                                    <span className="flex items-center gap-1 text-amber-600 font-bold"><Clock className="w-3 h-3" /> Pending</span>
+                                    <span className="flex items-center gap-1 text-amber-600 font-bold"><Clock className="w-3 h-3" /> {order.paymentStatus.replace('_', ' ')}</span>
                                 )}
                             </p>
+                        </div>
+                    </div>
+
+                    {/* Payment History */}
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-4">
+                        <h2 className="font-bold text-foreground flex items-center gap-2 mb-4">
+                            <Receipt className="w-4 h-4 text-primary" /> Payment History
+                        </h2>
+                        <div className="space-y-4">
+                            {order.payments?.length > 0 ? order.payments.map((p, idx) => (
+                                <div key={p.id} className="text-sm border-l-2 border-primary/20 pl-4 relative">
+                                    <div className="absolute w-2 h-2 rounded-full bg-primary -left-[5px] top-1.5" />
+                                    <div className="flex justify-between">
+                                        <span className="font-semibold uppercase text-[10px] tracking-wider">{p.status}</span>
+                                        <span className="text-xs text-muted-foreground">{formatDate(p.createdAt)}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">Provider: {p.provider}</div>
+                                    {p.transactionId && <div className="text-xs text-muted-foreground">Txn ID: {p.transactionId}</div>}
+                                </div>
+                            )) : (
+                                <div className="text-sm text-muted-foreground">No payment records found.</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Delivery Tracking */}
+                    <div className="bg-card p-6 rounded-2xl shadow-sm border border-border space-y-4">
+                        <h2 className="font-bold text-foreground flex items-center gap-2 mb-4">
+                            <Truck className="w-4 h-4 text-primary" /> Audit Trail
+                        </h2>
+                        <div className="space-y-4">
+                            {order.deliveryTracking?.length > 0 ? order.deliveryTracking.map((t, idx) => (
+                                <div key={t.id} className="text-sm border-l-2 border-primary/20 pl-4 relative">
+                                    <div className="absolute w-2 h-2 rounded-full bg-primary -left-[5px] top-1.5" />
+                                    <div className="flex justify-between">
+                                        <span className="font-semibold uppercase tracking-wider text-[10px]">{t.status.replace('_', ' ')}</span>
+                                        <span className="text-xs text-muted-foreground">{formatDate(t.createdAt)}</span>
+                                    </div>
+                                    {t.notes && <div className="text-xs mt-1 text-muted-foreground italic">"{t.notes}"</div>}
+                                </div>
+                            )) : (
+                                <div className="text-sm text-muted-foreground">No tracking updates yet.</div>
+                            )}
                         </div>
                     </div>
 

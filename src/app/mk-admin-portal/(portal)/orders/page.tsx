@@ -61,18 +61,18 @@ export default function AdminOrdersPage() {
     const getStatusBadge = (status: string, type: 'payment' | 'order') => {
         if (type === 'payment') {
             switch (status) {
-                case 'completed': return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#4ade80]/10 text-[#4ade80]">Paid</span>;
+                case 'success': return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#4ade80]/10 text-[#4ade80]">Paid</span>;
                 case 'pending': return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600">Pending</span>;
                 case 'failed': return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive">Failed</span>;
-                default: return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground">{status}</span>;
+                default: return <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground">{status.replace('_', ' ')}</span>;
             }
         } else {
             switch (status) {
                 case 'delivered': return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#4ade80]/10 text-[#4ade80]"><CheckCircle2 className="w-3 h-3" /> Delivered</span>;
-                case 'shipped': return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500"><Truck className="w-3 h-3" /> Shipped</span>;
+                case 'dispatched': return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500"><Truck className="w-3 h-3" /> Dispatched</span>;
                 case 'processing': return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600"><Package className="w-3 h-3" /> Processing</span>;
                 case 'cancelled': return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive"><AlertCircle className="w-3 h-3" /> Cancelled</span>;
-                default: return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground">{status}</span>;
+                default: return <span className="px-2 py-0.5 flex items-center gap-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground">{status.replace('_', ' ')}</span>;
             }
         }
     };
@@ -105,7 +105,7 @@ export default function AdminOrdersPage() {
                         <option value="all">All Statuses</option>
                         <option value="pending">Pending</option>
                         <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
+                        <option value="dispatched">Dispatched</option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
                     </select>

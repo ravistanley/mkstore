@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { orders, orderItems } from "@/lib/db/schema";
+import { orders, orderItems, payments, deliveryTracking, adminUsers } from "@/lib/db/schema";
 import { eq, desc, count, sum } from "drizzle-orm";
 import { getAdminSession } from "@/lib/auth";
 import { updateOrderStatusSchema } from "@/lib/validators";
@@ -24,7 +24,10 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ error: "Order not found" }, { status: 404 });
             }
             const items = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
-            return NextResponse.json({ ...order, items });
+            const paymentLogs = await db.select().from(payments).where(eq(payments.orderId, id)).orderBy(desc(payments.createdAt));
+            const deliveryLogs = await db.select().from(deliveryTracking).where(eq(deliveryTracking.orderId, id)).orderBy(desc(deliveryTracking.createdAt));
+            
+            return NextResponse.json({ ...order, items, payments: paymentLogs, deliveryTracking: deliveryLogs });
         }
 
         // Dashboard stats
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest) {
             const allOrders = await db.select().from(orders);
             const totalOrders = allOrders.length;
             const totalRevenue = allOrders
-                .filter((o) => o.paymentStatus === "completed")
+                .filter((o) => o.paymentStatus === "success")
                 .reduce((sum, o) => sum + Number(o.total), 0);
             const pendingOrders = allOrders.filter(
                 (o) => o.orderStatus === "pending"
@@ -114,13 +117,37 @@ export async function PATCH(request: NextRequest) {
             updateData.mpesaReceipt = parsed.data.mpesaReceipt;
         }
 
-        await db.update(orders).set(updateData).where(eq(orders.id, id));
+        // Get admin user ID if it exists
+        const [adminUser] = await db.select().from(adminUsers).where(eq(adminUsers.email, session.email)).limit(1);
+
+        await db.transaction(async (tx) => {
+            await tx.update(orders).set(updateData).where(eq(orders.id, id));
+
+            if (parsed.data.paymentStatus) {
+                await tx.insert(payments).values({
+                    orderId: id,
+                    provider: "MANUAL",
+                    amount: "0",
+                    status: parsed.data.paymentStatus as any,
+                    rawWebhookData: { note: "Manual update by admin", updatedByEmail: session.email },
+                });
+            }
+
+            if (parsed.data.orderStatus) {
+                await tx.insert(deliveryTracking).values({
+                    orderId: id,
+                    status: parsed.data.orderStatus as any,
+                    notes: "Status updated manually",
+                    updatedBy: adminUser?.id || null,
+                });
+            }
+        });
 
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Admin order update error:", error);
         return NextResponse.json(
-            { error: "Failed to update order" },
+            { error: error instanceof Error ? error.message : "Failed to update order" },
             { status: 500 }
         );
     }

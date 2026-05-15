@@ -5,7 +5,7 @@ import { adminUsers } from "./db/schema";
 import { eq } from "drizzle-orm";
 
 const SESSION_COOKIE_NAME = "mk_admin_session";
-const SESSION_MAX_AGE = 2 * 60; // 2 minutes in seconds (Security requirement)
+const SESSION_MAX_AGE = 24 * 60 * 60; // 24 hours in seconds
 
 // ============================================================
 // In-memory session store — wipped on server restart for security.
@@ -170,13 +170,14 @@ export async function validateAdminCredentials(
     email: string,
     password: string
 ): Promise<boolean> {
-    // Check env credentials first
     const envEmail = process.env.ADMIN_EMAIL;
     const envPassword = process.env.ADMIN_PASSWORD;
 
     if (envEmail && envPassword) {
-        if (email === envEmail && password === envPassword) {
-            return true;
+        // If the email matches the primary admin email in .env, 
+        // we MUST use the .env password and skip the DB check.
+        if (email === envEmail) {
+            return password === envPassword;
         }
     }
 

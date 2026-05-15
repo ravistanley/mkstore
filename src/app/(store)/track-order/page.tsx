@@ -64,7 +64,7 @@ export default function TrackOrderPage() {
     const formatPrice = (price: number) => `KSh ${price.toLocaleString("en-KE")}`;
 
     const renderStatusTracker = (status: string) => {
-        const statuses = ["pending", "processing", "shipped", "delivered"];
+        const statuses = ["pending", "processing", "dispatched", "delivered"];
         if (status === "cancelled") {
             return (
                 <div className="flex items-center gap-4 text-destructive bg-destructive/10 p-6 rounded-2xl">
@@ -94,9 +94,9 @@ export default function TrackOrderPage() {
                         title = "Processing";
                         desc = "Your order is being prepared and packed.";
                     }
-                    if (s === "shipped") {
+                    if (s === "dispatched") {
                         Icon = Truck;
-                        title = "Shipped";
+                        title = "Dispatched";
                         desc = "Your order has been handed over to the delivery partner and is on the way.";
                     }
                     if (s === "delivered") {
@@ -238,10 +238,10 @@ export default function TrackOrderPage() {
                                             </div>
                                             <div>
                                                 <p className="capitalize font-medium text-foreground">{order.paymentMethod.replace('_', ' ')}</p>
-                                                <p className={`text-xs font-semibold uppercase mt-1 ${order.paymentStatus === 'completed' ? 'text-[#4ade80]' :
+                                                <p className={`text-xs font-semibold uppercase mt-1 ${order.paymentStatus === 'success' ? 'text-[#4ade80]' :
                                                     order.paymentStatus === 'failed' ? 'text-destructive' : 'text-amber-500'
                                                     }`}>
-                                                    {order.paymentStatus}
+                                                    {order.paymentStatus.replace('_', ' ')}
                                                 </p>
                                             </div>
                                         </div>

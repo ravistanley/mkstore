@@ -109,18 +109,21 @@ export type CartAction = "add" | "update" | "remove";
 // Order statuses
 export const ORDER_STATUSES = [
   "pending",
+  "payment_processing",
   "paid",
   "processing",
-  "shipped",
+  "dispatched",
   "delivered",
   "cancelled",
+  "refunded",
+  "failed",
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const PAYMENT_STATUSES = [
   "pending",
-  "completed",
+  "success",
   "failed",
   "refunded",
 ] as const;

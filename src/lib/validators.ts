@@ -86,13 +86,17 @@ export const adminLoginSchema = z.object({
 export const updateOrderStatusSchema = z.object({
     orderStatus: z.enum([
         "pending",
+        "payment_processing",
+        "paid",
         "processing",
-        "shipped",
+        "dispatched",
         "delivered",
         "cancelled",
+        "refunded",
+        "failed",
     ]).optional(),
     paymentStatus: z
-        .enum(["pending", "completed", "failed", "refunded"])
+        .enum(["pending", "success", "failed", "refunded"])
         .optional(),
     mpesaReceipt: z.string().optional(),
 });

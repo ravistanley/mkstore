@@ -7,8 +7,32 @@ import {
     integer,
     decimal,
     uuid,
+    pgEnum,
+    jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+// ============================================================
+// Enums
+// ============================================================
+export const orderStatusEnum = pgEnum("order_status", [
+    "pending",
+    "payment_processing",
+    "paid",
+    "processing",
+    "dispatched",
+    "delivered",
+    "cancelled",
+    "refunded",
+    "failed"
+]);
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+    "pending",
+    "success",
+    "failed",
+    "refunded"
+]);
 
 // ============================================================
 // Categories
@@ -167,10 +191,11 @@ export const orders = pgTable("orders", {
     deliveryMethod: varchar("delivery_method", { length: 50 }).notNull(),
     paymentMethod: varchar("payment_method", { length: 50 }).notNull(),
     mpesaReceipt: varchar("mpesa_receipt", { length: 100 }),
-    paymentStatus: varchar("payment_status", { length: 20 })
+    checkoutRequestId: varchar("checkout_request_id", { length: 100 }),
+    paymentStatus: paymentStatusEnum("payment_status")
         .default("pending")
         .notNull(),
-    orderStatus: varchar("order_status", { length: 20 })
+    orderStatus: orderStatusEnum("order_status")
         .default("pending")
         .notNull(),
     subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
@@ -187,6 +212,8 @@ export const orders = pgTable("orders", {
 
 export const ordersRelations = relations(orders, ({ many }) => ({
     items: many(orderItems),
+    payments: many(payments),
+    deliveryTracking: many(deliveryTracking),
 }));
 
 // ============================================================
@@ -233,3 +260,52 @@ export const adminUsers = pgTable("admin_users", {
     passwordHash: text("password_hash").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ============================================================
+// Payments
+// ============================================================
+export const payments = pgTable("payments", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+        .notNull()
+        .references(() => orders.id, { onDelete: "cascade" }),
+    transactionId: varchar("transaction_id", { length: 255 }).unique(),
+    provider: varchar("provider", { length: 50 }).notNull(),
+    checkoutRequestId: varchar("checkout_request_id", { length: 100 }).unique(),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    status: paymentStatusEnum("status").default("pending").notNull(),
+    rawWebhookData: jsonb("raw_webhook_data"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+    order: one(orders, {
+        fields: [payments.orderId],
+        references: [orders.id],
+    }),
+}));
+
+// ============================================================
+// Delivery Tracking
+// ============================================================
+export const deliveryTracking = pgTable("delivery_tracking", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+        .notNull()
+        .references(() => orders.id, { onDelete: "cascade" }),
+    status: orderStatusEnum("status").notNull(),
+    notes: text("notes"),
+    updatedBy: uuid("updated_by").references(() => adminUsers.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const deliveryTrackingRelations = relations(deliveryTracking, ({ one }) => ({
+    order: one(orders, {
+        fields: [deliveryTracking.orderId],
+        references: [orders.id],
+    }),
+    updater: one(adminUsers, {
+        fields: [deliveryTracking.updatedBy],
+        references: [adminUsers.id],
+    }),
+}));

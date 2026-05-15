@@ -125,6 +125,14 @@ export async function POST(request: NextRequest) {
                     total,
                     orderNumber
                 );
+                
+                // Secure Webhook: Store the CheckoutRequestID to match with Daraja's callback
+                if (mpesaResult.success && mpesaResult.checkoutRequestId) {
+                    await db
+                        .update(orders)
+                        .set({ checkoutRequestId: mpesaResult.checkoutRequestId })
+                        .where(eq(orders.id, order.id));
+                }
             } catch (error) {
                 console.error("M-Pesa STK push error:", error);
                 // Order is still created, payment can be retried
