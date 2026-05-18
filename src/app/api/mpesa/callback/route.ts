@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processMpesaCallback } from "@/lib/mpesa";
 import { db } from "@/lib/db";
-import { orders, payments } from "@/lib/db/schema";
+import { orders, payments, orderItems } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
     try {
@@ -47,6 +48,34 @@ export async function POST(request: NextRequest) {
                             })
                             .where(eq(orders.id, order.id));
                     });
+
+                    // Send order confirmation email after successful payment
+                    if (order.email) {
+                        const savedItems = await db
+                            .select()
+                            .from(orderItems)
+                            .where(eq(orderItems.orderId, order.id));
+
+                        sendOrderConfirmationEmail({
+                            orderNumber: order.orderNumber,
+                            fullName: order.fullName,
+                            email: order.email,
+                            paymentMethod: "mpesa",
+                            deliveryMethod: order.deliveryMethod,
+                            deliveryLocation: order.deliveryLocation,
+                            deliveryNotes: order.deliveryNotes,
+                            subtotal: Number(order.subtotal),
+                            deliveryFee: Number(order.deliveryFee),
+                            total: Number(order.total),
+                            mpesaReceipt: result.mpesaReceipt,
+                            items: savedItems.map((i) => ({
+                                productName: i.productName,
+                                variantName: i.variantName,
+                                quantity: i.quantity,
+                                price: Number(i.price),
+                            })),
+                        }).catch(console.error);
+                    }
                 } else {
                     console.log(`[M-Pesa Webhook] Duplicate transaction ID ${result.mpesaReceipt} ignored.`);
                 }

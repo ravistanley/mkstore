@@ -185,7 +185,7 @@ export const orders = pgTable("orders", {
     orderNumber: varchar("order_number", { length: 20 }).notNull().unique(),
     fullName: varchar("full_name", { length: 255 }).notNull(),
     phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
-    email: varchar("email", { length: 255 }),
+    email: varchar("email", { length: 255 }).notNull(),
     deliveryLocation: text("delivery_location").notNull(),
     deliveryNotes: text("delivery_notes"),
     deliveryMethod: varchar("delivery_method", { length: 50 }).notNull(),

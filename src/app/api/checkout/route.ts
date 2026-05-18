@@ -3,14 +3,13 @@ import { db } from "@/lib/db";
 import {
     orders,
     orderItems,
-    cartItems,
-    products,
     productVariants,
 } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getCartId, getCartWithItems, clearCart } from "@/lib/cart";
 import { checkoutSchema } from "@/lib/validators";
 import { initiateSTKPush } from "@/lib/mpesa";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 function generateOrderNumber(): string {
     const prefix = "MK";
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
         const subtotal = items.reduce(
             (sum, item) =>
                 sum +
-                (item.variant?.priceOverride ?? item.priceAtTimeAdded) * item.quantity,
+                (item.variant?.priceOverride ?? item.product.price) * item.quantity,
             0
         );
 
@@ -75,7 +74,7 @@ export async function POST(request: NextRequest) {
                 orderNumber,
                 fullName: parsed.data.fullName,
                 phoneNumber: parsed.data.phoneNumber,
-                email: parsed.data.email || null,
+                email: parsed.data.email,
                 deliveryLocation: parsed.data.deliveryLocation,
                 deliveryNotes: parsed.data.deliveryNotes || null,
                 deliveryMethod: parsed.data.deliveryMethod,
@@ -96,7 +95,7 @@ export async function POST(request: NextRequest) {
             productName: item.product.name,
             variantName: item.variant?.name || null,
             quantity: item.quantity,
-            price: (item.variant?.priceOverride ?? item.priceAtTimeAdded).toFixed(2),
+            price: (item.variant?.priceOverride ?? item.product.price).toFixed(2),
         }));
 
         await db.insert(orderItems).values(orderItemsData);
@@ -137,6 +136,33 @@ export async function POST(request: NextRequest) {
                 console.error("M-Pesa STK push error:", error);
                 // Order is still created, payment can be retried
             }
+        }
+
+        // Send confirmation email immediately for Pay on Delivery
+        if (parsed.data.paymentMethod === "pay_on_delivery" && parsed.data.email) {
+            const savedItems = await db
+                .select()
+                .from(orderItems)
+                .where(eq(orderItems.orderId, order.id));
+
+            sendOrderConfirmationEmail({
+                orderNumber,
+                fullName: parsed.data.fullName,
+                email: parsed.data.email,
+                paymentMethod: parsed.data.paymentMethod,
+                deliveryMethod: parsed.data.deliveryMethod,
+                deliveryLocation: parsed.data.deliveryLocation,
+                deliveryNotes: parsed.data.deliveryNotes,
+                subtotal,
+                deliveryFee,
+                total,
+                items: savedItems.map((i) => ({
+                    productName: i.productName,
+                    variantName: i.variantName,
+                    quantity: i.quantity,
+                    price: Number(i.price),
+                })),
+            }).catch(console.error); // fire-and-forget, don't block response
         }
 
         return NextResponse.json({

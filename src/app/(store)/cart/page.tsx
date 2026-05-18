@@ -112,7 +112,7 @@ export default function CartPage() {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-xl font-bold text-primary">
-                                                    {formatPrice(item.variant?.priceOverride ?? item.priceAtTimeAdded)}
+                                                    {formatPrice(item.variant?.priceOverride ?? item.product.price)}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground mt-1">each</p>
                                             </div>

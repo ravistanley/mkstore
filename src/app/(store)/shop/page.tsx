@@ -185,7 +185,7 @@ export default async function ShopPage({
                     {/* Product Grid Area */}
                     <div className="flex-1 min-w-0">
                         {/* Top Bar */}
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-border animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-border animate-fade-in relative z-30" style={{ animationDelay: "0.1s" }}>
 
                             <div className="text-sm text-muted-foreground">
                                 Showing <span className="font-semibold text-foreground">{shopProducts.length}</span> results

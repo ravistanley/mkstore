@@ -19,6 +19,7 @@ export default function CheckoutPage() {
     const router = useRouter();
     const { items, subtotal, isLoading: cartLoading, refreshCart } = useCart();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm<CheckoutFormValues>({
@@ -58,6 +59,7 @@ export default function CheckoutPage() {
             }
 
             await refreshCart(); // Clear local cart
+            setIsSuccess(true);
 
             // Redirect to confirmation
             router.push(`/order-confirmation?orderId=${responseData.order.id}&mpesa=${data.paymentMethod === 'mpesa'}`);
@@ -68,10 +70,10 @@ export default function CheckoutPage() {
     };
 
     useEffect(() => {
-        if (!cartLoading && items.length === 0) {
+        if (!cartLoading && items.length === 0 && !isSuccess && !isSubmitting) {
             router.push("/cart");
         }
-    }, [items.length, cartLoading, router]);
+    }, [items.length, cartLoading, isSuccess, isSubmitting, router]);
 
     if (cartLoading) return null;
 
@@ -129,7 +131,7 @@ export default function CheckoutPage() {
                                     )}
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="email">Email Address (Optional)</Label>
+                                    <Label htmlFor="email">Email Address</Label>
                                     <Input
                                         id="email"
                                         type="email"
@@ -286,7 +288,7 @@ export default function CheckoutPage() {
                                             <p className="text-muted-foreground text-xs">Qty: {item.quantity}</p>
                                         </div>
                                         <span className="font-semibold whitespace-nowrap">
-                                            {formatPrice((item.variant?.priceOverride ?? item.priceAtTimeAdded) * item.quantity)}
+                                            {formatPrice((item.variant?.priceOverride ?? item.product.price) * item.quantity)}
                                         </span>
                                     </div>
                                 ))}

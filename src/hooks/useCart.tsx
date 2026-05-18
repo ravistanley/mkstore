@@ -62,7 +62,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const subtotal = items.reduce(
         (sum, item) =>
             sum +
-            (item.variant?.priceOverride ?? item.priceAtTimeAdded) * item.quantity,
+            (item.variant?.priceOverride ?? item.product.price) * item.quantity,
         0
     );
 

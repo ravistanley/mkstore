@@ -65,7 +65,7 @@ export const checkoutSchema = z.object({
         .string()
         .min(9, "Phone number is required")
         .regex(/^(\+?254|0)?[17]\d{8}$/, "Enter a valid Kenyan phone number"),
-    email: z.string().email().optional().or(z.literal("")),
+    email: z.string().email("A valid email address is required"),
     deliveryLocation: z.string().min(1, "Delivery location is required"),
     deliveryNotes: z.string().optional(),
     deliveryMethod: z.enum(["delivery", "pickup"]),

@@ -125,7 +125,7 @@ export default function CartDrawer() {
                                         <div className="mt-auto flex items-center justify-between pt-3">
                                             <p className="font-semibold text-primary">
                                                 {formatPrice(
-                                                    item.variant?.priceOverride ?? item.priceAtTimeAdded
+                                                    item.variant?.priceOverride ?? item.product.price
                                                 )}
                                             </p>
                                             
