@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Edit, Trash2, Search, ArrowRight, Loader2, GripVertical, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { sanitizeImageUrl } from "@/lib/utils";
 
 type Category = {
     id: string;
@@ -249,7 +250,7 @@ export default function AdminCategoriesPage() {
                                 <div className="flex items-center gap-4">
                                     {imageUrl && (
                                         <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden border border-border relative group">
-                                            <img src={imageUrl} alt="Category" className="w-full h-full object-cover" />
+                                            <img src={sanitizeImageUrl(imageUrl)} alt="Category" className="w-full h-full object-cover" />
                                             <button 
                                                 type="button" 
                                                 onClick={() => setImageUrl("")}

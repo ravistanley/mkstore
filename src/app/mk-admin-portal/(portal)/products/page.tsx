@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { sanitizeImageUrl } from "@/lib/utils";
 
 type Product = {
     id: string;
@@ -142,7 +143,7 @@ export default function AdminProductsPage() {
                                     <div className="w-10 h-10 bg-muted rounded-lg border border-border flex items-center justify-center overflow-hidden relative">
                                         {product.imageUrl ? (
                                             /* eslint-disable-next-line @next/next/no-img-element */
-                                            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                                            <img src={sanitizeImageUrl(product.imageUrl)} alt={product.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <ImageIcon className="w-4 h-4 text-muted-foreground/50" />
                                         )}

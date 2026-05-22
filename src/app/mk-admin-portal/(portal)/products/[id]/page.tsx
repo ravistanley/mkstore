@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { sanitizeImageUrl } from "@/lib/utils";
 
 import { use } from "react";
 
@@ -224,7 +225,7 @@ export default function ProductForm({ params }: { params: Promise<{ id: string }
                                 <div key={i} className="aspect-square bg-muted rounded-xl border border-border relative group overflow-hidden">
                                     {img.url ? (
                                         /* eslint-disable-next-line @next/next/no-img-element */
-                                        <img src={img.url} alt={img.altText || `Image ${i + 1}`} className="w-full h-full object-cover" />
+                                        <img src={sanitizeImageUrl(img.url)} alt={img.altText || `Image ${i + 1}`} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">IMG {i + 1}</div>
                                     )}
