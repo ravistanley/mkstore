@@ -35,6 +35,7 @@ export async function GET(
             orderStatus: order.orderStatus,
             orderNumber: order.orderNumber,
             fullName: order.fullName,
+            phoneNumber: order.phoneNumber,
             email: order.email,
             paymentMethod: order.paymentMethod,
             deliveryMethod: order.deliveryMethod,

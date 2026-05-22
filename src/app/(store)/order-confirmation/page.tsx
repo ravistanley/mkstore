@@ -14,6 +14,7 @@ interface OrderDetails {
     orderStatus: string;
     orderNumber: string;
     fullName: string;
+    phoneNumber: string;
     email: string;
     paymentMethod: string;
     deliveryMethod: string;
@@ -41,6 +42,20 @@ function ConfirmationContent() {
     const [mounted, setMounted] = useState(false);
     const [order, setOrder] = useState<OrderDetails | null>(null);
     const [isPolling, setIsPolling] = useState(true);
+
+    // M-Pesa resend states
+    const [isResending, setIsResending] = useState(false);
+    const [resendError, setResendError] = useState<string | null>(null);
+    const [resendSuccess, setResendSuccess] = useState(false);
+    const [isEditingPhone, setIsEditingPhone] = useState(false);
+    const [phoneInput, setPhoneInput] = useState("");
+
+    // Initialize phone input from order details
+    useEffect(() => {
+        if (order && !phoneInput) {
+            setPhoneInput(order.phoneNumber);
+        }
+    }, [order, phoneInput]);
 
     const orderId = searchParams.get("orderId");
     const isMpesa = searchParams.get("mpesa") === "true";
@@ -80,6 +95,45 @@ function ConfirmationContent() {
             return () => clearInterval(interval);
         }
     }, [orderId, isMpesa, isPolling]);
+
+    const handleResendSTK = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!orderId) return;
+
+        setIsResending(true);
+        setResendError(null);
+        setResendSuccess(false);
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/resend-stk`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    phoneNumber: phoneInput,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to resend STK push");
+            }
+
+            setResendSuccess(true);
+            setIsEditingPhone(false);
+            setIsPolling(true); // Resume status polling
+            
+            setTimeout(() => {
+                setResendSuccess(false);
+            }, 5000);
+        } catch (err: any) {
+            setResendError(err.message || "An unexpected error occurred");
+        } finally {
+            setIsResending(false);
+        }
+    };
 
     if (!mounted || !orderId) return null;
 
@@ -128,6 +182,98 @@ function ConfirmationContent() {
                     <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#4ade80]/10 text-[#16a34a] dark:text-[#4ade80] rounded-full text-sm font-medium">
                         <Mail className="w-4 h-4" />
                         Confirmation sent to {order.email}
+                    </div>
+                )}
+
+                {/* M-Pesa Resend STK Section */}
+                {isMpesa && order && (order.paymentStatus === "pending" || order.paymentStatus === "failed") && (
+                    <div className="mt-6 pt-6 border-t border-border/50 max-w-md mx-auto">
+                        {!isEditingPhone ? (
+                            <div className="space-y-4">
+                                <div className="text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap">
+                                    <span>Sent to</span>
+                                    <span className="font-semibold text-mk-dark dark:text-foreground bg-muted px-2 py-0.5 rounded-md text-xs">
+                                        {order.phoneNumber}
+                                    </span>
+                                    <span>•</span>
+                                    <button 
+                                        onClick={() => setIsEditingPhone(true)}
+                                        className="text-primary hover:underline text-xs font-medium focus:outline-none"
+                                    >
+                                        Change number
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={() => handleResendSTK()}
+                                    disabled={isResending}
+                                    className={`inline-flex items-center justify-center gap-2 text-sm font-semibold h-11 px-6 rounded-xl transition-all duration-300 w-full md:w-auto ${
+                                        isResending 
+                                            ? "bg-primary/20 text-primary cursor-not-allowed" 
+                                            : "bg-primary text-primary-foreground hover:bg-primary/95 hover:scale-[1.02] active:scale-[0.98] shadow-sm shadow-primary/25"
+                                    }`}
+                                >
+                                    {isResending ? (
+                                        <>
+                                            <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                                            Requesting STK Push...
+                                        </>
+                                    ) : (
+                                        "Resend STK Push"
+                                    )}
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleResendSTK} className="space-y-3">
+                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                                    Change M-Pesa Phone Number
+                                </div>
+                                <div className="flex gap-2 max-w-sm mx-auto">
+                                    <input
+                                        type="tel"
+                                        value={phoneInput}
+                                        onChange={(e) => setPhoneInput(e.target.value)}
+                                        placeholder="e.g. 0712345678"
+                                        disabled={isResending}
+                                        className="flex-1 px-4 py-2 text-sm rounded-xl border border-border bg-white dark:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-center font-medium"
+                                        required
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={isResending || !phoneInput}
+                                        className="px-4 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 transition-all"
+                                    >
+                                        {isResending ? "Sending..." : "Send Prompt"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPhoneInput(order.phoneNumber);
+                                            setIsEditingPhone(false);
+                                            setResendError(null);
+                                        }}
+                                        disabled={isResending}
+                                        className="px-3 py-2 text-sm font-medium rounded-xl border border-border text-muted-foreground hover:bg-muted shrink-0 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
+                        {/* Status Messages */}
+                        {resendSuccess && (
+                            <div className="mt-3 text-xs text-[#16a34a] dark:text-[#4ade80] font-medium flex items-center justify-center gap-1 animate-fade-in">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                STK Push prompt sent to your phone!
+                            </div>
+                        )}
+
+                        {resendError && (
+                            <div className="mt-3 text-xs text-destructive font-medium animate-fade-in">
+                                ⚠️ {resendError}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
